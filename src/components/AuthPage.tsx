@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { Language, UserProfile } from '../types';
 import { translations } from '../data/translations';
+import { languageNames, supportedLanguages } from '../i18n';
 import { authAPI } from '../services/api';
 import { GpsLocationTracker } from './GpsLocationTracker';
 import { ServerEndpointModal } from './ServerEndpointModal';
@@ -212,42 +213,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </button>
 
           {/* Language Switcher */}
-          <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md p-1.5 rounded-2xl border border-white/30 shadow-lg">
+          <label className="flex items-center gap-1 bg-white/20 backdrop-blur-md p-1.5 rounded-2xl border border-white/30 shadow-lg">
             <Languages className="w-4 h-4 text-citrus-300 ml-2 mr-1 hidden sm:inline" />
-            <button
-              type="button"
-              onClick={() => onLanguageChange('en')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                language === 'en'
-                  ? 'bg-white text-agri-950 shadow-md scale-105'
-                  : 'text-white/90 hover:text-white hover:bg-white/10'
-              }`}
+            <span className="sr-only">{t.preferredLanguage}</span>
+            <select
+              value={language}
+              onChange={(event) => onLanguageChange(event.target.value as Language)}
+              aria-label={t.preferredLanguage}
+              className="max-w-[7.5rem] cursor-pointer bg-transparent px-2 py-1.5 text-xs font-bold text-white outline-none"
             >
-              English
-            </button>
-            <button
-              type="button"
-              onClick={() => onLanguageChange('hi')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                language === 'hi'
-                  ? 'bg-white text-agri-950 shadow-md scale-105'
-                  : 'text-white/90 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              हिंदी
-            </button>
-            <button
-              type="button"
-              onClick={() => onLanguageChange('ta')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                language === 'ta'
-                  ? 'bg-white text-agri-950 shadow-md scale-105'
-                  : 'text-white/90 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              தமிழ்
-            </button>
-          </div>
+              {supportedLanguages.map((supportedLanguage) => (
+                <option key={supportedLanguage} value={supportedLanguage} className="text-slate-900">
+                  {languageNames[supportedLanguage]}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </header>
 

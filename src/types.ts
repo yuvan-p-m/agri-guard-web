@@ -1,4 +1,18 @@
-export type Language = 'en' | 'hi' | 'ta';
+export type Language =
+  | 'en' | 'ta' | 'hi' | 'te' | 'ml' | 'kn'
+  | 'bn' | 'mr' | 'gu' | 'pa' | 'ur' | 'or' | 'as' | 'ne' | 'si'
+  | 'ar' | 'fr' | 'es' | 'pt' | 'de' | 'it' | 'ru' | 'uk' | 'tr'
+  | 'id' | 'ms' | 'th' | 'vi' | 'ko' | 'ja';
+
+export type LocalizedText = {
+  en: string;
+  [language: string]: string;
+};
+
+export type LocalizedTextList = {
+  en: string[];
+  [language: string]: string[];
+};
 
 export interface HardwareState {
   isConnected: boolean;
@@ -93,11 +107,7 @@ export interface IoTSensorData {
     potassiumMgKg: number;
     potassiumStatus: 'Low' | 'Sufficient' | 'Optimal';
   };
-  aiAdvisory: {
-    en: string;
-    hi: string;
-    ta: string;
-  };
+  aiAdvisory: LocalizedText;
 }
 
 export interface RemedyItem {
@@ -115,26 +125,26 @@ export interface RemedyItem {
 export interface DiseaseDiagnosis {
   id: string;
   cropId: string;
-  cropName: { en: string; hi: string; ta: string };
-  diseaseName: { en: string; hi: string; ta: string };
+  cropName: LocalizedText;
+  diseaseName: LocalizedText;
   scientificName: string;
   pathogenType: 'Fungus' | 'Bacterium' | 'Virus' | 'Pest' | 'Nutrient Deficiency';
   stage: 'Early Stage (Inception)' | 'Moderate Progression' | 'Severe Outbreak';
   confidence: number;
   incubationPeriod: string;
   spreadRiskRate: number; // e.g. 45% crop loss if untreated in 7 days
-  earlyWarningAlert: { en: string; hi: string; ta: string };
-  symptoms: { en: string[]; hi: string[]; ta: string[] };
+  earlyWarningAlert: LocalizedText;
+  symptoms: LocalizedTextList;
   visualFeatures: string[];
   organicProtocol: {
-    overview: { en: string; hi: string; ta: string };
+    overview: LocalizedText;
     remedies: RemedyItem[];
   };
   chemicalProtocol: {
-    overview: { en: string; hi: string; ta: string };
+    overview: LocalizedText;
     remedies: RemedyItem[];
   };
-  preventativeTips: { en: string[]; hi: string[]; ta: string[] };
+  preventativeTips: LocalizedTextList;
   recommendedProductIds: string[];
   sampleImage: string;
 }
@@ -152,7 +162,7 @@ export interface EcomProduct {
   badge: 'Govt Certified' | 'Organic India' | 'Best Seller' | 'Next-Day Delivery';
   inStock: boolean;
   image: string;
-  description: { en: string; hi: string; ta: string };
+  description: LocalizedText;
   vendor: string;
 }
 
@@ -182,9 +192,9 @@ export interface SmsAlert {
   timestamp: string;
   type: 'weather' | 'pest_alert' | 'treatment_reminder' | 'soil_advisory';
   urgency: 'high' | 'medium' | 'normal';
-  title: { en: string; hi: string; ta: string };
-  message: { en: string; hi: string; ta: string };
-  actionRequired?: { en: string; hi: string; ta: string };
+  title: LocalizedText;
+  message: LocalizedText;
+  actionRequired?: LocalizedText;
   isRead: boolean;
 }
 

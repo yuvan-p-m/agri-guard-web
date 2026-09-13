@@ -1,6 +1,6 @@
 import { EcomProduct } from '../types';
 
-export const ecommerceProducts: EcomProduct[] = [
+const ecommerceProductsData: EcomProduct[] = [
   {
     id: 'prod-copper-oxy',
     name: 'Blitox Copper Oxychloride 50% WP (Fungicide & Bactericide)',
@@ -182,3 +182,37 @@ export const ecommerceProducts: EcomProduct[] = [
     vendor: 'Kisan Safety Direct'
   }
 ];
+
+export const ecommerceProducts: EcomProduct[] = ecommerceProductsData.map((product) => ({
+  ...product,
+  description: {
+    ...product.description,
+    te: product.description.te ?? product.description.en,
+    ml: product.description.ml ?? product.description.en,
+    kn: product.description.kn ?? product.description.en,
+    bn: product.description.bn ?? product.description.en,
+    mr: product.description.mr ?? product.description.en,
+    gu: product.description.gu ?? product.description.en,
+    pa: product.description.pa ?? product.description.en,
+    ur: product.description.ur ?? product.description.en,
+    or: product.description.or ?? product.description.en,
+    as: product.description.as ?? product.description.en,
+    ne: product.description.ne ?? product.description.en,
+    si: product.description.si ?? product.description.en,
+    ar: product.description.ar ?? product.description.en,
+    fr: product.description.fr ?? product.description.en,
+    es: product.description.es ?? product.description.en,
+    pt: product.description.pt ?? product.description.en,
+    de: product.description.de ?? product.description.en,
+    it: product.description.it ?? product.description.en,
+    ru: product.description.ru ?? product.description.en,
+    uk: product.description.uk ?? product.description.en,
+    tr: product.description.tr ?? product.description.en,
+    id: product.description.id ?? product.description.en,
+    ms: product.description.ms ?? product.description.en,
+    th: product.description.th ?? product.description.en,
+    vi: product.description.vi ?? product.description.en,
+    ko: product.description.ko ?? product.description.en,
+    ja: product.description.ja ?? product.description.en,
+  },
+}));

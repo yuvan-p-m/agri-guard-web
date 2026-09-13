@@ -1,54 +1,95 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import en from './locales/en.json';
-import hi from './locales/hi.json';
-import ta from './locales/ta.json';
+import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { getLocalizedText, getTranslationCoverage, languageNames, translations, validateTranslationCompleteness } from './data/translations';
+import type { Language } from './types';
 
-const savedLang =
-  (typeof window !== 'undefined' &&
-    (localStorage.getItem('agriguard_language') || localStorage.getItem('i18nextLng'))) ||
-  'en';
+export const supportedLanguages: Language[] = [
+  'en', 'ta', 'hi', 'te', 'ml', 'kn', 'bn', 'mr', 'gu', 'pa', 'ur', 'or', 'as', 'ne', 'si',
+  'ar', 'fr', 'es', 'pt', 'de', 'it', 'ru', 'uk', 'tr', 'id', 'ms', 'th', 'vi', 'ko', 'ja',
+];
+export { languageNames };
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources: {
-      en: { translation: en },
-      hi: { translation: hi },
-      ta: { translation: ta },
-    },
-    lng: savedLang,
-    fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false,
-    },
-  });
-
-i18n.on('languageChanged', (lng) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('agriguard_language', lng);
-    localStorage.setItem('i18nextLng', lng);
+const missingTranslationKeys = validateTranslationCompleteness();
+if (import.meta.env.DEV && missingTranslationKeys.length > 0) {
+  console.warn('Missing translation keys:', missingTranslationKeys);
+}
+if (import.meta.env.DEV) {
+  const fallbackOnlyLocales = supportedLanguages.slice(1).map(getTranslationCoverage);
+  const fallbackCount = fallbackOnlyLocales.reduce((total, entry) => total + entry.englishFallbackKeys, 0);
+  if (fallbackCount > 0) {
+    console.info('Translation coverage report:', fallbackOnlyLocales.map(({ locale, totalKeys, translatedKeys, englishFallbackKeys }) => ({ locale, totalKeys, translatedKeys, englishFallbackKeys })));
   }
-});
-
-import { useTranslation as useBaseTranslation } from 'react-i18next';
-
-export function useAppTranslation() {
-  const { t: baseT, i18n: i18nInst } = useBaseTranslation();
-  const t = new Proxy(baseT, {
-    get(target: any, prop: string) {
-      if (prop === 'bind' || prop === 'apply' || prop === 'call') {
-        return target[prop].bind(target);
-      }
-      return target(prop);
-    },
-    apply(target, thisArg, args: [string, ...any[]]) {
-      return Reflect.apply(target, thisArg, args);
-    },
-  }) as ((key: string, defaultVal?: string) => string) & Record<string, string>;
-
-  return { t, i18n: i18nInst };
 }
 
-export default i18n;
+const LANGUAGE_STORAGE_KEY = 'agriguard_language';
+
+function readStoredLanguage(): Language {
+  if (typeof window === 'undefined') return 'en';
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  return stored && supportedLanguages.includes(stored as Language) ? stored as Language : 'en';
+}
+
+function interpolate(template: string, values?: Record<string, string | number>): string {
+  if (!values) return template;
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    values[key] === undefined ? match : String(values[key]),
+  );
+}
+
+export type TranslateFunction = ((key: string, values?: Record<string, string | number> | string) => string) &
+  Record<string, string>;
+
+function createTranslator(language: Language): TranslateFunction {
+  const translate = ((key: string, values?: Record<string, string | number> | string) => {
+    const fallback = typeof values === 'string' ? values : undefined;
+    const interpolationValues = typeof values === 'string' ? undefined : values;
+    return interpolate(getLocalizedText({
+      [language]: translations[language][key],
+      en: translations.en[key],
+    }, language) || fallback || key, interpolationValues);
+  }) as TranslateFunction;
+
+  return new Proxy(translate, {
+    get(target, property, receiver) {
+      if (typeof property === 'symbol') return Reflect.get(target, property, receiver);
+      return target(property);
+    },
+  });
+}
+
+interface LanguageContextValue {
+  language: Language;
+  setLanguage: (language: Language) => void;
+  t: TranslateFunction;
+}
+
+const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(readStoredLanguage);
+  const setLanguage = (nextLanguage: Language) => {
+    setLanguageState(nextLanguage);
+    if (typeof window !== 'undefined') localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+  };
+  useEffect(() => {
+    const isRtl = language === 'ar' || language === 'ur';
+    document.documentElement.lang = language;
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    document.body.dir = isRtl ? 'rtl' : 'ltr';
+  }, [language]);
+  const value = useMemo(() => ({ language, setLanguage, t: createTranslator(language) }), [language]);
+  return createElement(LanguageContext.Provider, { value }, children);
+}
+
+export function useLanguage(): LanguageContextValue {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error('useLanguage must be used inside LanguageProvider');
+  return context;
+}
+
+export function useAppTranslation() {
+  const { language, setLanguage, t } = useLanguage();
+  return { t, language, setLanguage, i18n: { language, changeLanguage: setLanguage } };
+}
+
+export const useTranslation = useAppTranslation;
 

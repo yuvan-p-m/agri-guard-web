@@ -19,7 +19,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import type { HardwareState, Language, IoTSensorData } from '../types';
-import { translations } from '../data/translations';
+import { getLocalizedText, translations } from '../data/translations';
 
 interface IoTSensorsTabProps {
   language: Language;
@@ -467,7 +467,7 @@ export const IoTSensorsTab: React.FC<IoTSensorsTabProps> = ({
           </div>
 
           <p className="text-xs sm:text-sm text-agri-100 leading-relaxed font-medium max-w-4xl">
-            {telemetry.aiAdvisory[language]}
+            {getLocalizedText(telemetry.aiAdvisory, language)}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">

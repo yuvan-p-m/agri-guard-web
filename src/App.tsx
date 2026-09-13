@@ -11,7 +11,7 @@ import type {
   Order,
   HardwareState
 } from './types';
-import { translations } from './data/translations';
+import { useLanguage } from './i18n';
 import { cropDiseases } from './data/cropDiseases';
 import { demoProfiles, sampleWeatherStations, initialHistoryRecords } from './data/sampleHistory';
 import { ecommerceProducts } from './data/ecommerceProducts';
@@ -42,7 +42,7 @@ export const App: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Global App States
-  const [language, setLanguage] = useState<Language>('en');
+  const { language, setLanguage } = useLanguage();
   const [user, setUser] = useState<UserProfile>({
     id: '',
     name: 'Farmer Partner',
@@ -126,7 +126,7 @@ export const App: React.FC = () => {
   const [isPrescriptionOpen, setIsPrescriptionOpen] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
 
-  const t = translations[language];
+  const { t } = useLanguage();
 
   // Trigger high-accuracy live GPS tracking
   const requestLiveGpsLocation = (isManualRetry = false) => {

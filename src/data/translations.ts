@@ -1,6 +1,6 @@
 import type { Language } from '../types';
 
-export const translations: Record<Language, Record<string, string>> = {
+const baseTranslations: Record<'en' | 'hi' | 'ta', Record<string, string>> = {
   en: {
     // Brand & Quote
     appName: 'AgriGuard',
@@ -17,6 +17,10 @@ export const translations: Record<Language, Record<string, string>> = {
     guestMode: 'Explore as Guest Farmer',
     smsNotifications: 'SMS Notifications',
     unreadAlerts: 'Unread Alerts',
+    toggleNavigation: 'Toggle navigation menu',
+    openAlerts: 'Open agricultural alerts',
+    dashboardNavigation: 'Dashboard navigation',
+    closeMenu: 'Close menu',
 
     // Navigation Tabs (5 Tabs)
     tabDiagnosis: 'Crop Diagnosis',
@@ -276,6 +280,51 @@ export const translations: Record<Language, Record<string, string>> = {
     active: 'Active',
     resolved: 'Resolved',
     remedyApplied: 'Remedy Applied',
+
+    // Crop recommendation, progression risk & schemes
+    tabCropRecommendation: 'AI Crop Recommendation',
+    cropRecSubtitle: 'Predicting optimal crops by evaluating your live Firebase soil sensor stream and live weather.',
+    locationPlaceholder: 'Enter City, District, or GPS (e.g. Nagpur, Maharashtra)',
+    useCurrentGps: 'Use Live GPS',
+    loadingRecommendations: 'Predicting...',
+    getRecommendationsBtn: 'Get Recommendations',
+    featuresFedTitle: 'Features Fed to Random Forest Model',
+    soilMoisture: 'Moisture',
+    salinityRain: 'Salinity & Rain',
+    topRecommendedCrops: 'Top Recommended Crops for Your Land',
+    sortedByProbability: 'Sorted by Model Probability Score',
+    topRank1: '#1 Top Recommendation',
+    topRank2: '#2 Strong Alternative',
+    topRank3: '#3 Viable Rotation Crop',
+    recommended: 'Recommended',
+    modelConfidence: 'Match',
+    randomForestProbability: 'Random Forest Probability',
+    idealBenchmarks: 'Ideal Dataset Benchmarks:',
+    readyToMonitorDisease: 'Ready to monitor disease progression?',
+    uploadInDiagnosisNote: 'Upload a crop leaf photo in Crop Diagnosis to evaluate disease risk against your live micro-climate.',
+    tabCropDiagnosis: 'Go to Diagnosis',
+    pathologyMicroclimateReasoning: 'Pathology & Micro-Climate Reasoning',
+    poweredByGemini: 'Powered by Gemini AI',
+    progressionTitle: 'Disease Progression Risk Assessment',
+    stageLabel: 'Stage',
+    vulnerabilityWindowLabel: 'Vulnerability Window',
+    pathologyFactorsTitle: 'Micro-Climate & Biological Progression Factors:',
+    liveIotSensorProof: 'IoT Sensor Telemetry',
+    liveWeatherProof: 'Live Weather Telemetry',
+    conditionRiskEstimateNote: 'Condition-based epidemiological progression estimated from live field sensors + weather telemetry via Gemini AI.',
+    schemesHeaderTitle: 'Direct Benefit Transfer & Welfare Programs',
+    tabGovtSchemes: 'Government Schemes',
+    schemesHeaderSubtitle: 'Explore subsidies, crop insurance, financial credit, and soil health programs offered by the Central and State Governments for Indian farmers.',
+    schemesFound: 'Schemes',
+    schemesSearchPlaceholder: 'Search scheme by name, benefit keyword, or eligibility...',
+    filterCategory: 'Category',
+    eligibleCropsLabel: 'Eligible Crops',
+    eligibleStateLabel: 'State',
+    clearFilters: 'Clear All Filters',
+    allCrops: 'All Crops',
+    applyWebsite: 'Apply',
+    noSchemesFound: 'No government schemes matched your current filter criteria.',
+    noSchemesFoundSub: 'We could not find any government schemes matching your search or dropdown criteria. Try resetting your filters.',
   },
   hi: {
     // Brand & Quote
@@ -293,6 +342,10 @@ export const translations: Record<Language, Record<string, string>> = {
     guestMode: 'अतिथि किसान के रूप में देखें',
     smsNotifications: 'एसएमएस सूचनाएं',
     unreadAlerts: 'नई सूचनाएं',
+    toggleNavigation: 'नेविगेशन मेनू बदलें',
+    openAlerts: 'कृषि अलर्ट खोलें',
+    dashboardNavigation: 'डैशबोर्ड नेविगेशन',
+    closeMenu: 'मेनू बंद करें',
 
     // Navigation Tabs (5 Tabs)
     tabDiagnosis: 'फसल रोग निदान',
@@ -569,6 +622,10 @@ export const translations: Record<Language, Record<string, string>> = {
     guestMode: 'விருந்தினராக தொடரவும்',
     smsNotifications: 'எஸ்.எம்.எஸ் அறிவிப்புகள்',
     unreadAlerts: 'புதிய அறிவிப்புகள்',
+    toggleNavigation: 'வழிசெலுத்தல் மெனுவை மாற்று',
+    openAlerts: 'வேளாண் எச்சரிக்கைகளைத் திறக்கவும்',
+    dashboardNavigation: 'டாஷ்போர்டு வழிசெலுத்தல்',
+    closeMenu: 'மெனுவை மூடு',
 
     // Navigation Tabs (5 Tabs)
     tabDiagnosis: 'பயிர் நோய் கண்டறிதல்',
@@ -830,3 +887,224 @@ export const translations: Record<Language, Record<string, string>> = {
     remedyApplied: 'மருந்து தெளிக்கப்பட்டது',
   }
 };
+
+const additionalTranslations: Partial<Record<Language, Record<string, string>>> = {
+  te: {
+    appName: 'అగ్రిగార్డ్',
+    tagline: 'AI ఆధారిత వ్యవసాయ ఆరోగ్య సహాయకుడు',
+    welcomeBack: 'తిరిగి స్వాగతం',
+    signIn: 'సైన్ ఇన్',
+    createAccount: 'ఖాతా సృష్టించండి',
+    logout: 'లాగ్ అవుట్ చేసి ఖాతా మార్చండి',
+    preferredLanguage: 'ఇష్టమైన భాష',
+    tabDiagnosis: 'పంట వ్యాధి నిర్ధారణ',
+    tabHistory: 'వ్యాధి చరిత్ర మరియు అభిప్రాయం',
+    tabWeatherSms: 'వాతావరణం మరియు SMS సలహా',
+    tabIotSensors: 'IoT ప్రత్యక్ష సెన్సర్లు',
+    tabStore: 'అగ్రి స్టోర్ (సరఫరాలు)',
+    save: 'సేవ్ చేయండి',
+    close: 'మూసివేయండి',
+  },
+  ml: {
+    appName: 'അഗ്രിഗാർഡ്',
+    tagline: 'AI അധിഷ്ഠിത കാർഷിക ആരോഗ്യ സഹായി',
+    welcomeBack: 'വീണ്ടും സ്വാഗതം',
+    signIn: 'സൈൻ ഇൻ',
+    createAccount: 'അക്കൗണ്ട് സൃഷ്ടിക്കുക',
+    logout: 'പുറത്തുകടന്ന് അക്കൗണ്ട് മാറ്റുക',
+    preferredLanguage: 'തിരഞ്ഞെടുത്ത ഭാഷ',
+    tabDiagnosis: 'വിള രോഗനിർണയം',
+    tabHistory: 'രോഗ ചരിത്രവും അഭിപ്രായവും',
+    tabWeatherSms: 'കാലാവസ്ഥയും SMS ഉപദേശവും',
+    tabIotSensors: 'IoT തത്സമയ സെൻസറുകൾ',
+    tabStore: 'അഗ്രി സ്റ്റോർ (സാധനങ്ങൾ)',
+    save: 'സംരക്ഷിക്കുക',
+    close: 'അടയ്ക്കുക',
+  },
+  kn: {
+    appName: 'ಅಗ್ರಿಗಾರ್ಡ್',
+    tagline: 'AI ಆಧಾರಿತ ಕೃಷಿ ಆರೋಗ್ಯ ಸಹಾಯಕ',
+    welcomeBack: 'ಮತ್ತೆ ಸ್ವಾಗತ',
+    signIn: 'ಸೈನ್ ಇನ್',
+    createAccount: 'ಖಾತೆ ರಚಿಸಿ',
+    logout: 'ಲಾಗ್ ಔಟ್ ಮಾಡಿ ಖಾತೆ ಬದಲಿಸಿ',
+    preferredLanguage: 'ಆದ್ಯತೆಯ ಭಾಷೆ',
+    tabDiagnosis: 'ಬೆಳೆ ರೋಗನಿರ್ಣಯ',
+    tabHistory: 'ರೋಗದ ಇತಿಹಾಸ ಮತ್ತು ಪ್ರತಿಕ್ರಿಯೆ',
+    tabWeatherSms: 'ಹವಾಮಾನ ಮತ್ತು SMS ಸಲಹೆ',
+    tabIotSensors: 'IoT ಲೈವ್ ಸೆನ್ಸರ್‌ಗಳು',
+    tabStore: 'ಅಗ್ರಿ-ಸ್ಟೋರ್ (ಸರಬರಾಜು)',
+    save: 'ಉಳಿಸಿ',
+    close: 'ಮುಚ್ಚಿ',
+  },
+  bn: {
+    appName: 'অ্যাগ্রিগার্ড', tagline: 'AI-চালিত কৃষি স্বাস্থ্য সহায়ক', welcomeBack: 'আবার স্বাগতম',
+    signIn: 'সাইন ইন', createAccount: 'অ্যাকাউন্ট তৈরি করুন', logout: 'লগ আউট করে অ্যাকাউন্ট বদলান',
+    preferredLanguage: 'পছন্দের ভাষা', tabDiagnosis: 'ফসল রোগ নির্ণয়', tabHistory: 'রোগের ইতিহাস ও মতামত',
+    tabWeatherSms: 'আবহাওয়া ও SMS পরামর্শ', tabIotSensors: 'IoT লাইভ সেন্সর', tabStore: 'কৃষি স্টোর (সরবরাহ)',
+    farmerProfile: 'কৃষক প্রোফাইল', humidity: 'আর্দ্রতা', readAloud: 'নির্ণয় পড়ে শোনান', stopAudio: 'অডিও বন্ধ করুন', save: 'সংরক্ষণ করুন', close: 'বন্ধ করুন', cartTotal: 'কৃষি পণ্যের কার্ট',
+  },
+  mr: {
+    appName: 'अॅग्रीगार्ड', tagline: 'AI-आधारित कृषी आरोग्य सहाय्यक', welcomeBack: 'पुन्हा स्वागत आहे',
+    signIn: 'साइन इन', createAccount: 'खाते तयार करा', logout: 'लॉग आउट करून खाते बदला', preferredLanguage: 'पसंतीची भाषा',
+    tabDiagnosis: 'पीक रोग निदान', tabHistory: 'रोग इतिहास आणि अभिप्राय', tabWeatherSms: 'हवामान आणि SMS सल्ला', tabIotSensors: 'IoT थेट सेन्सर', tabStore: 'अॅग्री-स्टोअर (साहित्य)',
+    farmerProfile: 'शेतकरी प्रोफाइल', humidity: 'आर्द्रता', readAloud: 'निदान ऐका', stopAudio: 'आवाज बंद करा', save: 'जतन करा', close: 'बंद करा', cartTotal: 'शेती साहित्याची कार्ट',
+  },
+  gu: {
+    appName: 'એગ્રીગાર્ડ', tagline: 'AI આધારિત કૃષિ આરોગ્ય સહાયક', welcomeBack: 'ફરી સ્વાગત છે', signIn: 'સાઇન ઇન', createAccount: 'ખાતું બનાવો', logout: 'લૉગ આઉટ કરીને ખાતું બદલો', preferredLanguage: 'પસંદગીની ભાષા',
+    tabDiagnosis: 'પાક રોગ નિદાન', tabHistory: 'રોગનો ઇતિહાસ અને પ્રતિસાદ', tabWeatherSms: 'હવામાન અને SMS સલાહ', tabIotSensors: 'IoT લાઇવ સેન્સર', tabStore: 'એગ્રી-સ્ટોર (સામગ્રી)', farmerProfile: 'ખેડૂત પ્રોફાઇલ', humidity: 'ભેજ', readAloud: 'નિદાન સાંભળો', stopAudio: 'ઓડિયો બંધ કરો', save: 'સાચવો', close: 'બંધ કરો', cartTotal: 'ખેતી સામાનની કાર્ટ',
+  },
+  pa: {
+    appName: 'ਐਗਰੀਗਾਰਡ', tagline: 'AI ਆਧਾਰਿਤ ਖੇਤੀਬਾੜੀ ਸਿਹਤ ਸਹਾਇਕ', welcomeBack: 'ਜੀ ਆਇਆਂ ਨੂੰ', signIn: 'ਸਾਈਨ ਇਨ', createAccount: 'ਖਾਤਾ ਬਣਾਓ', logout: 'ਲੌਗ ਆਊਟ ਕਰਕੇ ਖਾਤਾ ਬਦਲੋ', preferredLanguage: 'ਪਸੰਦੀਦਾ ਭਾਸ਼ਾ',
+    tabDiagnosis: 'ਫਸਲ ਰੋਗ ਪਛਾਣ', tabHistory: 'ਰੋਗ ਇਤਿਹਾਸ ਅਤੇ ਫੀਡਬੈਕ', tabWeatherSms: 'ਮੌਸਮ ਅਤੇ SMS ਸਲਾਹ', tabIotSensors: 'IoT ਲਾਈਵ ਸੈਂਸਰ', tabStore: 'ਐਗਰੀ-ਸਟੋਰ (ਸਪਲਾਈ)', farmerProfile: 'ਕਿਸਾਨ ਪ੍ਰੋਫਾਈਲ', humidity: 'ਨਮੀ', readAloud: 'ਨਿਦਾਨ ਸੁਣੋ', stopAudio: 'ਆਵਾਜ਼ ਬੰਦ ਕਰੋ', save: 'ਸੁਰੱਖਿਅਤ ਕਰੋ', close: 'ਬੰਦ ਕਰੋ', cartTotal: 'ਖੇਤੀ ਸਮਾਨ ਕਾਰਟ',
+  },
+  ur: {
+    appName: 'ایگری گارڈ', tagline: 'AI سے چلنے والا زرعی صحت معاون', welcomeBack: 'خوش آمدید', signIn: 'سائن اِن', createAccount: 'اکاؤنٹ بنائیں', logout: 'لاگ آؤٹ کرکے اکاؤنٹ تبدیل کریں', preferredLanguage: 'پسندیدہ زبان',
+    tabDiagnosis: 'فصل کی تشخیص', tabHistory: 'بیماری کی تاریخ اور رائے', tabWeatherSms: 'موسم اور SMS مشورہ', tabIotSensors: 'IoT لائیو سینسرز', tabStore: 'زرعی اسٹور (سامان)', farmerProfile: 'کسان پروفائل', humidity: 'نمی', readAloud: 'تشخیص سنیں', stopAudio: 'آڈیو بند کریں', save: 'محفوظ کریں', close: 'بند کریں', cartTotal: 'زرعی سامان کی ٹوکری',
+  },
+  or: {
+    appName: 'ଏଗ୍ରିଗାର୍ଡ', tagline: 'AI ଚାଳିତ କୃଷି ସ୍ୱାସ୍ଥ୍ୟ ସହାୟକ', welcomeBack: 'ପୁଣି ସ୍ୱାଗତ', signIn: 'ସାଇନ୍ ଇନ୍', createAccount: 'ଖାତା ତିଆରି କରନ୍ତୁ', logout: 'ଲଗ୍ ଆଉଟ୍ କରି ଖାତା ବଦଳାନ୍ତୁ', preferredLanguage: 'ପସନ୍ଦର ଭାଷା',
+    tabDiagnosis: 'ଫସଲ ରୋଗ ନିରୂପଣ', tabHistory: 'ରୋଗ ଇତିହାସ ଓ ମତାମତ', tabWeatherSms: 'ପାଣିପାଗ ଓ SMS ପରାମର୍ଶ', tabIotSensors: 'IoT ଲାଇଭ୍ ସେନ୍ସର', tabStore: 'କୃଷି ଷ୍ଟୋର୍ (ସାମଗ୍ରୀ)', farmerProfile: 'ଚାଷୀ ପ୍ରୋଫାଇଲ୍', humidity: 'ଆର୍ଦ୍ରତା', readAloud: 'ନିରୂପଣ ଶୁଣନ୍ତୁ', stopAudio: 'ଅଡିଓ ବନ୍ଦ କରନ୍ତୁ', save: 'ସଞ୍ଚୟ କରନ୍ତୁ', close: 'ବନ୍ଦ କରନ୍ତୁ', cartTotal: 'କୃଷି ସାମଗ୍ରୀ କାର୍ଟ',
+  },
+  as: {
+    appName: 'এগ্ৰিগাৰ্ড', tagline: 'AI-চালিত কৃষি স্বাস্থ্য সহায়ক', welcomeBack: 'পুনৰ স্বাগতম', signIn: 'ছাইন ইন', createAccount: 'একাউণ্ট সৃষ্টি কৰক', logout: 'লগ আউট কৰি একাউণ্ট সলনি কৰক', preferredLanguage: 'পছন্দৰ ভাষা',
+    tabDiagnosis: 'শস্য ৰোগ নিৰ্ণয়', tabHistory: 'ৰোগৰ ইতিহাস আৰু মতামত', tabWeatherSms: 'বতৰ আৰু SMS পৰামৰ্শ', tabIotSensors: 'IoT লাইভ চেন্সৰ', tabStore: 'কৃষি ষ্টোৰ (সামগ্ৰী)', farmerProfile: 'কৃষকৰ প্ৰফাইল', humidity: 'আৰ্দ্ৰতা', readAloud: 'নিৰ্ণয় শুনক', stopAudio: 'অডিঅ’ বন্ধ কৰক', save: 'সংৰক্ষণ কৰক', close: 'বন্ধ কৰক', cartTotal: 'কৃষি সামগ্ৰীৰ কাৰ্ট',
+  },
+  ne: {
+    appName: 'एग्रीगार्ड', tagline: 'AI द्वारा सञ्चालित कृषि स्वास्थ्य सहायक', welcomeBack: 'फेरि स्वागत छ', signIn: 'साइन इन', createAccount: 'खाता बनाउनुहोस्', logout: 'लगआउट गरी खाता बदल्नुहोस्', preferredLanguage: 'मनपर्ने भाषा',
+    tabDiagnosis: 'बाली रोग पहिचान', tabHistory: 'रोग इतिहास र प्रतिक्रिया', tabWeatherSms: 'मौसम र SMS सल्लाह', tabIotSensors: 'IoT लाइभ सेन्सर', tabStore: 'कृषि स्टोर (सामग्री)', farmerProfile: 'किसान प्रोफाइल', humidity: 'आर्द्रता', readAloud: 'निदान सुन्नुहोस्', stopAudio: 'अडियो रोक्नुहोस्', save: 'सुरक्षित गर्नुहोस्', close: 'बन्द गर्नुहोस्', cartTotal: 'कृषि सामग्री कार्ट',
+  },
+  si: {
+    appName: 'ඇග්‍රිගාඩ්', tagline: 'AI මත පදනම් වූ කෘෂිකාර්මික සෞඛ්‍ය සහායක', welcomeBack: 'නැවත සාදරයෙන් පිළිගනිමු', signIn: 'පුරනය වන්න', createAccount: 'ගිණුමක් සාදන්න', logout: 'ඉවත් වී ගිණුම මාරු කරන්න', preferredLanguage: 'කැමති භාෂාව',
+    tabDiagnosis: 'වගා රෝග නිර්ණය', tabHistory: 'රෝග ඉතිහාසය සහ ප්‍රතිචාර', tabWeatherSms: 'කාලගුණය සහ SMS උපදෙස්', tabIotSensors: 'IoT සජීවී සංවේදක', tabStore: 'කෘෂි වෙළඳසැල (සැපයුම්)', farmerProfile: 'ගොවි පැතිකඩ', humidity: 'ආර්ද්‍රතාව', readAloud: 'නිර්ණය අසන්න', stopAudio: 'ශ්‍රව්‍ය නවත්වන්න', save: 'සුරකින්න', close: 'වසන්න', cartTotal: 'කෘෂි භාණ්ඩ කරත්තය',
+  },
+  ar: {
+    appName: 'أجري جارد', tagline: 'مساعد الصحة الزراعية المدعوم بالذكاء الاصطناعي', welcomeBack: 'مرحباً بعودتك', signIn: 'تسجيل الدخول', createAccount: 'إنشاء حساب', logout: 'تسجيل الخروج وتبديل الحساب', preferredLanguage: 'اللغة المفضلة',
+    tabDiagnosis: 'تشخيص المحاصيل', tabHistory: 'سجل الأمراض والملاحظات', tabWeatherSms: 'الطقس ونصائح SMS', tabIotSensors: 'مستشعرات IoT المباشرة', tabStore: 'المتجر الزراعي (المستلزمات)', farmerProfile: 'ملف المزارع', humidity: 'الرطوبة', readAloud: 'قراءة التشخيص', stopAudio: 'إيقاف الصوت', save: 'حفظ', close: 'إغلاق', cartTotal: 'سلة المستلزمات الزراعية',
+  },
+  fr: { appName: 'AgriGuard', tagline: 'Assistant de santé agricole propulsé par l’IA', welcomeBack: 'Bon retour', signIn: 'Se connecter', createAccount: 'Créer un compte', logout: 'Se déconnecter et changer de compte', preferredLanguage: 'Langue préférée', tabDiagnosis: 'Diagnostic des cultures', tabHistory: 'Historique des maladies et retours', tabWeatherSms: 'Météo et conseils SMS', tabIotSensors: 'Capteurs IoT en direct', tabStore: 'Agri-Store (fournitures)', farmerProfile: 'Profil de l’agriculteur', humidity: 'Humidité', readAloud: 'Lire le diagnostic', stopAudio: 'Arrêter le son', save: 'Enregistrer', close: 'Fermer', cartTotal: 'Panier de fournitures agricoles' },
+  es: { appName: 'AgriGuard', tagline: 'Asistente de salud agrícola con IA', welcomeBack: 'Bienvenido de nuevo', signIn: 'Iniciar sesión', createAccount: 'Crear cuenta', logout: 'Cerrar sesión y cambiar cuenta', preferredLanguage: 'Idioma preferido', tabDiagnosis: 'Diagnóstico de cultivos', tabHistory: 'Historial de enfermedades y comentarios', tabWeatherSms: 'Clima y asesoría por SMS', tabIotSensors: 'Sensores IoT en vivo', tabStore: 'Agri-Store (suministros)', farmerProfile: 'Perfil del agricultor', humidity: 'Humedad', readAloud: 'Leer diagnóstico', stopAudio: 'Detener audio', save: 'Guardar', close: 'Cerrar', cartTotal: 'Carrito de suministros agrícolas' },
+  pt: { appName: 'AgriGuard', tagline: 'Assistente de saúde agrícola com inteligência artificial', welcomeBack: 'Bem-vindo de volta', signIn: 'Entrar', createAccount: 'Criar conta', logout: 'Sair e trocar de conta', preferredLanguage: 'Idioma preferido', tabDiagnosis: 'Diagnóstico de culturas', tabHistory: 'Histórico de doenças e feedback', tabWeatherSms: 'Clima e orientação por SMS', tabIotSensors: 'Sensores IoT ao vivo', tabStore: 'Agri-Store (insumos)', farmerProfile: 'Perfil do agricultor', humidity: 'Umidade', readAloud: 'Ler diagnóstico', stopAudio: 'Parar áudio', save: 'Salvar', close: 'Fechar', cartTotal: 'Carrinho de insumos agrícolas' },
+  de: { appName: 'AgriGuard', tagline: 'KI-gestützter landwirtschaftlicher Gesundheitsassistent', welcomeBack: 'Willkommen zurück', signIn: 'Anmelden', createAccount: 'Konto erstellen', logout: 'Abmelden und Konto wechseln', preferredLanguage: 'Bevorzugte Sprache', tabDiagnosis: 'Pflanzendiagnose', tabHistory: 'Krankheitsverlauf und Feedback', tabWeatherSms: 'Wetter und SMS-Beratung', tabIotSensors: 'IoT-Live-Sensoren', tabStore: 'Agri-Store (Zubehör)', farmerProfile: 'Bauernprofil', humidity: 'Luftfeuchtigkeit', readAloud: 'Diagnose vorlesen', stopAudio: 'Audio stoppen', save: 'Speichern', close: 'Schließen', cartTotal: 'Warenkorb für Agrarbedarf' },
+  it: { appName: 'AgriGuard', tagline: 'Assistente agricolo per la salute delle colture basato sull’IA', welcomeBack: 'Bentornato', signIn: 'Accedi', createAccount: 'Crea account', logout: 'Esci e cambia account', preferredLanguage: 'Lingua preferita', tabDiagnosis: 'Diagnosi delle colture', tabHistory: 'Cronologia malattie e feedback', tabWeatherSms: 'Meteo e consigli SMS', tabIotSensors: 'Sensori IoT in tempo reale', tabStore: 'Agri-Store (forniture)', farmerProfile: 'Profilo agricoltore', humidity: 'Umidità', readAloud: 'Leggi diagnosi', stopAudio: 'Ferma audio', save: 'Salva', close: 'Chiudi', cartTotal: 'Carrello forniture agricole' },
+  ru: { appName: 'AgriGuard', tagline: 'Сельскохозяйственный помощник по здоровью растений на базе ИИ', welcomeBack: 'С возвращением', signIn: 'Войти', createAccount: 'Создать аккаунт', logout: 'Выйти и сменить аккаунт', preferredLanguage: 'Предпочтительный язык', tabDiagnosis: 'Диагностика культур', tabHistory: 'История болезней и отзывы', tabWeatherSms: 'Погода и советы по SMS', tabIotSensors: 'Датчики IoT в реальном времени', tabStore: 'Агро-магазин (материалы)', farmerProfile: 'Профиль фермера', humidity: 'Влажность', readAloud: 'Озвучить диагноз', stopAudio: 'Остановить звук', save: 'Сохранить', close: 'Закрыть', cartTotal: 'Корзина агротоваров' },
+  uk: { appName: 'AgriGuard', tagline: 'Сільськогосподарський помічник зі здоров’я рослин на основі ШІ', welcomeBack: 'Ласкаво просимо', signIn: 'Увійти', createAccount: 'Створити обліковий запис', logout: 'Вийти та змінити обліковий запис', preferredLanguage: 'Бажана мова', tabDiagnosis: 'Діагностика культур', tabHistory: 'Історія хвороб і відгуки', tabWeatherSms: 'Погода та поради SMS', tabIotSensors: 'Датчики IoT наживо', tabStore: 'Агро-магазин (матеріали)', farmerProfile: 'Профіль фермера', humidity: 'Вологість', readAloud: 'Озвучити діагноз', stopAudio: 'Зупинити звук', save: 'Зберегти', close: 'Закрити', cartTotal: 'Кошик агротоварів' },
+  tr: { appName: 'AgriGuard', tagline: 'Yapay zekâ destekli tarım sağlığı asistanı', welcomeBack: 'Tekrar hoş geldiniz', signIn: 'Giriş yap', createAccount: 'Hesap oluştur', logout: 'Çıkış yap ve hesabı değiştir', preferredLanguage: 'Tercih edilen dil', tabDiagnosis: 'Ürün teşhisi', tabHistory: 'Hastalık geçmişi ve geri bildirim', tabWeatherSms: 'Hava durumu ve SMS danışmanlığı', tabIotSensors: 'Canlı IoT sensörleri', tabStore: 'Agri-Store (malzemeler)', farmerProfile: 'Çiftçi profili', humidity: 'Nem', readAloud: 'Teşhisi seslendir', stopAudio: 'Sesi durdur', save: 'Kaydet', close: 'Kapat', cartTotal: 'Tarım malzemeleri sepeti' },
+  id: { appName: 'AgriGuard', tagline: 'Asisten kesehatan pertanian bertenaga AI', welcomeBack: 'Selamat datang kembali', signIn: 'Masuk', createAccount: 'Buat akun', logout: 'Keluar dan ganti akun', preferredLanguage: 'Bahasa pilihan', tabDiagnosis: 'Diagnosis tanaman', tabHistory: 'Riwayat penyakit dan umpan balik', tabWeatherSms: 'Cuaca dan saran SMS', tabIotSensors: 'Sensor IoT langsung', tabStore: 'Agri-Store (perlengkapan)', farmerProfile: 'Profil petani', humidity: 'Kelembapan', readAloud: 'Bacakan diagnosis', stopAudio: 'Hentikan audio', save: 'Simpan', close: 'Tutup', cartTotal: 'Keranjang perlengkapan tani' },
+  ms: { appName: 'AgriGuard', tagline: 'Pembantu kesihatan pertanian berkuasa AI', welcomeBack: 'Selamat kembali', signIn: 'Log masuk', createAccount: 'Cipta akaun', logout: 'Log keluar dan tukar akaun', preferredLanguage: 'Bahasa pilihan', tabDiagnosis: 'Diagnosis tanaman', tabHistory: 'Sejarah penyakit dan maklum balas', tabWeatherSms: 'Cuaca dan nasihat SMS', tabIotSensors: 'Penderia IoT langsung', tabStore: 'Agri-Store (bekalan)', farmerProfile: 'Profil petani', humidity: 'Kelembapan', readAloud: 'Baca diagnosis', stopAudio: 'Hentikan audio', save: 'Simpan', close: 'Tutup', cartTotal: 'Troli bekalan pertanian' },
+  th: { appName: 'AgriGuard', tagline: 'ผู้ช่วยสุขภาพการเกษตรที่ขับเคลื่อนด้วย AI', welcomeBack: 'ยินดีต้อนรับกลับมา', signIn: 'เข้าสู่ระบบ', createAccount: 'สร้างบัญชี', logout: 'ออกจากระบบและเปลี่ยนบัญชี', preferredLanguage: 'ภาษาที่ต้องการ', tabDiagnosis: 'วินิจฉัยพืช', tabHistory: 'ประวัติโรคและความคิดเห็น', tabWeatherSms: 'สภาพอากาศและคำแนะนำ SMS', tabIotSensors: 'เซ็นเซอร์ IoT แบบสด', tabStore: 'ร้านค้าเกษตร (อุปกรณ์)', farmerProfile: 'โปรไฟล์เกษตรกร', humidity: 'ความชื้น', readAloud: 'อ่านการวินิจฉัย', stopAudio: 'หยุดเสียง', save: 'บันทึก', close: 'ปิด', cartTotal: 'ตะกร้าอุปกรณ์การเกษตร' },
+  vi: { appName: 'AgriGuard', tagline: 'Trợ lý sức khỏe nông nghiệp hỗ trợ bởi AI', welcomeBack: 'Chào mừng trở lại', signIn: 'Đăng nhập', createAccount: 'Tạo tài khoản', logout: 'Đăng xuất và đổi tài khoản', preferredLanguage: 'Ngôn ngữ ưu tiên', tabDiagnosis: 'Chẩn đoán cây trồng', tabHistory: 'Lịch sử bệnh và phản hồi', tabWeatherSms: 'Thời tiết và tư vấn SMS', tabIotSensors: 'Cảm biến IoT trực tiếp', tabStore: 'Agri-Store (vật tư)', farmerProfile: 'Hồ sơ nông dân', humidity: 'Độ ẩm', readAloud: 'Đọc chẩn đoán', stopAudio: 'Dừng âm thanh', save: 'Lưu', close: 'Đóng', cartTotal: 'Giỏ vật tư nông nghiệp' },
+  ko: { appName: 'AgriGuard', tagline: 'AI 기반 농업 건강 도우미', welcomeBack: '다시 오신 것을 환영합니다', signIn: '로그인', createAccount: '계정 만들기', logout: '로그아웃 및 계정 전환', preferredLanguage: '선호 언어', tabDiagnosis: '작물 진단', tabHistory: '질병 기록 및 피드백', tabWeatherSms: '날씨 및 SMS 안내', tabIotSensors: 'IoT 실시간 센서', tabStore: '농업 상점 (용품)', farmerProfile: '농부 프로필', humidity: '습도', readAloud: '진단 읽어주기', stopAudio: '오디오 중지', save: '저장', close: '닫기', cartTotal: '농업 용품 장바구니' },
+  ja: { appName: 'AgriGuard', tagline: 'AIを活用した農業ヘルスアシスタント', welcomeBack: 'おかえりなさい', signIn: 'サインイン', createAccount: 'アカウントを作成', logout: 'ログアウトしてアカウントを切替', preferredLanguage: '優先言語', tabDiagnosis: '作物診断', tabHistory: '病害履歴とフィードバック', tabWeatherSms: '天気とSMSアドバイス', tabIotSensors: 'IoTライブセンサー', tabStore: 'アグリストア（資材）', farmerProfile: '農家プロフィール', humidity: '湿度', readAloud: '診断を読み上げる', stopAudio: '音声を停止', save: '保存', close: '閉じる', cartTotal: '農業資材カート' },
+};
+
+export const translations: Record<Language, Record<string, string>> = {
+  en: baseTranslations.en,
+  hi: baseTranslations.hi,
+  ta: baseTranslations.ta,
+  te: { ...baseTranslations.en, ...additionalTranslations.te },
+  ml: { ...baseTranslations.en, ...additionalTranslations.ml },
+  kn: { ...baseTranslations.en, ...additionalTranslations.kn },
+  bn: { ...baseTranslations.en, ...additionalTranslations.bn },
+  mr: { ...baseTranslations.en, ...additionalTranslations.mr },
+  gu: { ...baseTranslations.en, ...additionalTranslations.gu },
+  pa: { ...baseTranslations.en, ...additionalTranslations.pa },
+  ur: { ...baseTranslations.en, ...additionalTranslations.ur },
+  or: { ...baseTranslations.en, ...additionalTranslations.or },
+  as: { ...baseTranslations.en, ...additionalTranslations.as },
+  ne: { ...baseTranslations.en, ...additionalTranslations.ne },
+  si: { ...baseTranslations.en, ...additionalTranslations.si },
+  ar: { ...baseTranslations.en, ...additionalTranslations.ar },
+  fr: { ...baseTranslations.en, ...additionalTranslations.fr },
+  es: { ...baseTranslations.en, ...additionalTranslations.es },
+  pt: { ...baseTranslations.en, ...additionalTranslations.pt },
+  de: { ...baseTranslations.en, ...additionalTranslations.de },
+  it: { ...baseTranslations.en, ...additionalTranslations.it },
+  ru: { ...baseTranslations.en, ...additionalTranslations.ru },
+  uk: { ...baseTranslations.en, ...additionalTranslations.uk },
+  tr: { ...baseTranslations.en, ...additionalTranslations.tr },
+  id: { ...baseTranslations.en, ...additionalTranslations.id },
+  ms: { ...baseTranslations.en, ...additionalTranslations.ms },
+  th: { ...baseTranslations.en, ...additionalTranslations.th },
+  vi: { ...baseTranslations.en, ...additionalTranslations.vi },
+  ko: { ...baseTranslations.en, ...additionalTranslations.ko },
+  ja: { ...baseTranslations.en, ...additionalTranslations.ja },
+};
+
+export const languageNames: Record<Language, string> = {
+  en: 'English',
+  ta: 'தமிழ்',
+  hi: 'हिन्दी',
+  te: 'తెలుగు',
+  ml: 'മലയാളം',
+  kn: 'ಕನ್ನಡ',
+  bn: 'বাংলা',
+  mr: 'मराठी',
+  gu: 'ગુજરાતી',
+  pa: 'ਪੰਜਾਬੀ',
+  ur: 'اردو',
+  or: 'ଓଡ଼ିଆ',
+  as: 'অসমীয়া',
+  ne: 'नेपाली',
+  si: 'සිංහල',
+  ar: 'العربية',
+  fr: 'Français',
+  es: 'Español',
+  pt: 'Português',
+  de: 'Deutsch',
+  it: 'Italiano',
+  ru: 'Русский',
+  uk: 'Українська',
+  tr: 'Türkçe',
+  id: 'Bahasa Indonesia',
+  ms: 'Bahasa Melayu',
+  th: 'ไทย',
+  vi: 'Tiếng Việt',
+  ko: '한국어',
+  ja: '日本語',
+};
+
+export function validateTranslationCompleteness(): string[] {
+  const masterKeys = Object.keys(translations.en);
+  return (Object.keys(translations) as Language[]).flatMap((language) =>
+    masterKeys
+      .filter((key) => translations[language][key] === undefined)
+      .map((key) => `${language}.${key}`),
+  );
+}
+
+export interface TranslationCoverage {
+  locale: Language;
+  totalKeys: number;
+  translatedKeys: number;
+  englishFallbackKeys: number;
+  fallbackKeys: string[];
+}
+
+export function getTranslationCoverage(language: Language): TranslationCoverage {
+  const masterKeys = Object.keys(translations.en);
+  const fallbackKeys = masterKeys.filter((key) =>
+    language !== 'en' && translations[language][key] === translations.en[key],
+  );
+  return {
+    locale: language,
+    totalKeys: masterKeys.length,
+    translatedKeys: masterKeys.length - fallbackKeys.length,
+    englishFallbackKeys: fallbackKeys.length,
+    fallbackKeys,
+  };
+}
+
+export function getLocalizedText(
+  value: Record<string, string> | undefined,
+  language: Language,
+): string {
+  return value?.[language] ?? value?.en ?? '';
+}
+
+export function getLocalizedTextList(
+  value: Record<string, string[]> | undefined,
+  language: Language,
+): string[] {
+  return value?.[language] ?? value?.en ?? [];
+}
