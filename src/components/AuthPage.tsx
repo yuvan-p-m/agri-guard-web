@@ -15,7 +15,7 @@ import {
   Server
 } from 'lucide-react';
 import type { Language, UserProfile } from '../types';
-import { translations } from '../data/translations';
+import { useAppTranslation } from '../i18n';
 import { languageNames, supportedLanguages } from '../i18n';
 import { authAPI } from '../services/api';
 import { GpsLocationTracker } from './GpsLocationTracker';
@@ -59,7 +59,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [gpsAccuracy, setGpsAccuracy] = useState<number | undefined>(undefined);
   const [isServerModalOpen, setIsServerModalOpen] = useState<boolean>(false);
 
-  const t = translations[language];
+  const { t } = useAppTranslation();
 
   const handleCoordinatesChange = (lat: number, lon: number, accuracy?: number) => {
     setLatitude(lat);
@@ -247,15 +247,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="pt-4 space-y-2 text-xs text-emerald-100">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-citrus-400" />
-                <span>Secure Email & Password Authentication</span>
+                <span>{t.secureAuth}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-citrus-400" />
-                <span>Early Crop Disease & Weather Risk Warning</span>
+                <span>{t.earlyRiskWarning}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-citrus-400" />
-                <span>Role-Based Access (Farmer, Expert, Vendor)</span>
+                <span>{t.roleBasedAccess}</span>
               </div>
             </div>
           </div>
@@ -379,7 +379,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                         onChange={(e) => setRememberMe(e.target.checked)}
                         className="w-3.5 h-3.5 rounded text-agri-700 focus:ring-agri-500 border-slate-300"
                       />
-                      <span>Remember Me</span>
+                      <span>{t.rememberMe}</span>
                     </label>
                   </div>
 
@@ -597,7 +597,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
       {/* Footer */}
       <footer className="relative z-10 w-full max-w-7xl mx-auto px-4 py-3 text-center text-xs text-white/80 drop-shadow-sm font-medium">
-        <p>AgriGuard AI • English | हिंदी | தமிழ்</p>
+        <p>{t.supportLanguages}</p>
       </footer>
 
       {/* Backend Server Configuration Modal */}

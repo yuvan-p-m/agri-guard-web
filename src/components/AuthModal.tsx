@@ -15,7 +15,7 @@ import {
   Check
 } from 'lucide-react';
 import { Language, UserProfile } from '../types';
-import { translations } from '../data/translations';
+import { useAppTranslation } from '../i18n';
 import { authAPI } from '../services/api';
 import { GpsLocationTracker } from './GpsLocationTracker';
 
@@ -59,7 +59,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [latitude, setLatitude] = useState<number | undefined>(undefined);
   const [longitude, setLongitude] = useState<number | undefined>(undefined);
 
-  const t = translations[language];
+  const { t } = useAppTranslation();
 
   const handleCoordinatesChange = (lat: number, lon: number) => {
     setLatitude(lat);

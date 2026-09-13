@@ -1,9 +1,6 @@
 import React from 'react';
 import { 
   Sprout, 
-  Volume2, 
-  VolumeX, 
-  ShoppingCart, 
   LogOut, 
   CloudRain, 
   Sun, 
@@ -14,7 +11,7 @@ import {
   MapPin,
   Bell
 } from 'lucide-react';
-import type { Language, UserProfile, WeatherInfo, CartItem } from '../types';
+import type { Language, UserProfile, WeatherInfo } from '../types';
 import { languageNames, supportedLanguages } from '../i18n';
 import { useAppTranslation } from '../i18n';
 
@@ -24,10 +21,6 @@ interface HeaderProps {
   user: UserProfile;
   onLogout: () => void;
   weather: WeatherInfo;
-  cart: CartItem[];
-  onOpenCart: () => void;
-  isSpeaking: boolean;
-  onToggleSpeech: () => void;
   unreadNotifications: number;
   onOpenNotifications: () => void;
   isMobileNavOpen: boolean;
@@ -40,17 +33,12 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   onLogout,
   weather,
-  cart,
-  onOpenCart,
-  isSpeaking,
-  onToggleSpeech,
   unreadNotifications,
   onOpenNotifications,
   isMobileNavOpen,
   onToggleMobileNav,
 }) => {
   const { t } = useAppTranslation();
-  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   const getWeatherIcon = (type: WeatherInfo['iconType']) => {
     switch (type) {
@@ -139,30 +127,6 @@ export const Header: React.FC<HeaderProps> = ({
               </select>
             </label>
 
-            {/* Read Aloud (TTS) Accessibility Button */}
-            <button
-              type="button"
-              onClick={onToggleSpeech}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                isSpeaking 
-                  ? 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse shadow-sm' 
-                  : 'bg-agri-50 text-agri-800 border-agri-200 hover:bg-agri-100 hover:border-agri-300'
-              }`}
-              title={isSpeaking ? t.stopAudio : t.readAloud}
-            >
-              {isSpeaking ? (
-                <>
-                  <VolumeX className="w-4 h-4 text-rose-600 animate-bounce" />
-                  <span className="hidden md:inline">{t.stopAudio}</span>
-                </>
-              ) : (
-                <>
-                  <Volume2 className="w-4 h-4 text-agri-700" />
-                  <span className="hidden md:inline">{t.readAloud}</span>
-                </>
-              )}
-            </button>
-
             {/* Agricultural Advisory Notifications */}
             <button
               type="button"
@@ -175,22 +139,6 @@ export const Header: React.FC<HeaderProps> = ({
               {unreadNotifications > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-black flex items-center justify-center">
                   {unreadNotifications}
-                </span>
-              )}
-            </button>
-
-            {/* Farm Supplies Cart */}
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className="relative p-2 rounded-xl text-slate-700 hover:text-agri-800 hover:bg-agri-50 border border-slate-200 transition-colors"
-              title={t.cartTotal}
-              aria-label={t.cartTotal}
-            >
-              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-800" />
-              {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-agri-600 text-white rounded-full text-[10px] font-black flex items-center justify-center">
-                  {totalCartCount}
                 </span>
               )}
             </button>

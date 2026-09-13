@@ -21,6 +21,118 @@ export interface HardwareState {
   lastPing: string | null;
 }
 
+export interface CropRecommendation {
+  crop: string;
+  crop_key?: string;
+  confidence?: number;
+  reason: string;
+  ideal_profile?: {
+    ideal_N?: number;
+    ideal_P?: number;
+    ideal_K?: number;
+    ideal_temp?: number;
+    ideal_humidity?: number;
+    ideal_ph?: number;
+    ideal_rainfall?: number;
+  };
+}
+
+export interface CropRecommendationResponse {
+  status: string;
+  detail?: string;
+  location: string;
+  model_type?: string;
+  dataset?: string;
+  accuracy?: string;
+  total_crops?: number;
+  input_features?: {
+    N?: number;
+    P?: number;
+    K?: number;
+    temperature?: number;
+    humidity?: number;
+    ph?: number;
+    rainfall?: number;
+  };
+  weather: {
+    temp: number;
+    feels_like?: number;
+    humidity: number;
+    rain_mm: number;
+    condition: string;
+    resolved_name?: string;
+  };
+  sensor_snapshot: {
+    ec?: number;
+    humidity?: number;
+    moisture?: number;
+    nitrogen?: number;
+    ph?: number;
+    phosphorous?: number;
+    potassium?: number;
+    pump?: boolean | number;
+    rain?: number | boolean;
+    temperature?: number;
+  };
+  recommendations: CropRecommendation[];
+}
+
+export interface MandiRecord {
+  state: string;
+  district: string;
+  market: string;
+  commodity: string;
+  min_price: string;
+  max_price: string;
+  modal_price: string;
+  arrival_date: string;
+}
+
+export interface MandiPricesResponse {
+  status: 'success' | 'error' | string;
+  source?: string;
+  state?: string;
+  crop?: string;
+  last_updated?: string;
+  message?: string;
+  records: MandiRecord[];
+}
+
+export interface WeeklyPriceRecord {
+  week: string;
+  price: number;
+}
+
+export interface PriceForecastResponse {
+  status: 'success' | 'error' | string;
+  crop?: string;
+  state?: string;
+  weekly_prices: WeeklyPriceRecord[];
+  forecast: number[];
+  trend: 'RISING' | 'FALLING' | 'STABLE' | string;
+  pct_change: number;
+  verdict_title?: string;
+  recommendation: string;
+  record_count: number;
+  message?: string;
+}
+
+export interface CropAlertResponse {
+  status: 'success' | 'error' | string;
+  crop: string;
+  alert_type: string;
+  message: string;
+  recommendation: string;
+}
+
+export interface ProgressionRisk {
+  risk: string;
+  progression_stage?: string;
+  vulnerability_window?: string;
+  message: string;
+  pathology_factors?: string[];
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -149,28 +261,6 @@ export interface DiseaseDiagnosis {
   sampleImage: string;
 }
 
-export interface EcomProduct {
-  id: string;
-  name: string;
-  category: 'Organic Bio-Fungicide' | 'Chemical Fungicide' | 'Pesticide' | 'Foliar Fertilizer' | 'Sprayer Equipment' | 'Soil Kit';
-  brand: string;
-  packSize: string;
-  price: number;
-  originalPrice: number;
-  rating: number;
-  reviewCount: number;
-  badge: 'Govt Certified' | 'Organic India' | 'Best Seller' | 'Next-Day Delivery';
-  inStock: boolean;
-  image: string;
-  description: LocalizedText;
-  vendor: string;
-}
-
-export interface CartItem {
-  product: EcomProduct;
-  quantity: number;
-}
-
 export interface HistoryRecord {
   id: string;
   date: string;
@@ -206,25 +296,3 @@ export interface TrackingStep {
   current: boolean;
 }
 
-export interface Order {
-  id: string;
-  orderNumber: string;
-  date: string;
-  items: CartItem[];
-  subtotal: number;
-  discount: number;
-  total: number;
-  paymentMethod: 'COD' | 'UPI' | 'KCC';
-  paymentDetails?: string;
-  shippingAddress: {
-    fullName: string;
-    phone: string;
-    villageTaluka: string;
-    district: string;
-    state: string;
-    pincode: string;
-  };
-  status: 'Confirmed' | 'Packed' | 'In Transit' | 'Delivered';
-  estimatedDelivery: string;
-  trackingSteps: TrackingStep[];
-}

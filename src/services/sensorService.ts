@@ -7,7 +7,7 @@
  */
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getDatabase, ref, onValue, off, get } from 'firebase/database';
+import { getDatabase, ref, onValue, off, get, type DataSnapshot } from 'firebase/database';
 
 export type SensorStatus = 'Optimal' | 'Low' | 'High' | 'Critical' | 'No reading';
 
@@ -416,14 +416,14 @@ export function subscribeToLiveSensors(
 
   onValue(
     sensorsRef,
-    (snapshot) => {
+    (snapshot: DataSnapshot) => {
       const val = snapshot.val() as RawSensorData | null;
       cachedRawSnapshot = val;
       const interpreted = interpretAllSensors(val);
       cachedInterpretedSnapshot = interpreted;
       callback(interpreted);
     },
-    (error) => {
+    (error: Error) => {
       console.error('Firebase RTDB onValue listener error:', error);
       const errSnapshot: InterpretedSensorSnapshot = {
         available: false,

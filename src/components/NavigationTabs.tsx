@@ -4,18 +4,16 @@ import {
   Sprout, 
   History, 
   CloudRain, 
-  Store,
   Cpu,
   UserRound
 } from 'lucide-react';
 
-export type DashboardTab = 'diagnosis' | 'history' | 'weather' | 'iot' | 'store' | 'profile';
+export type DashboardTab = 'diagnosis' | 'history' | 'weather' | 'iot' | 'profile';
 
 interface NavigationTabsProps {
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
   unreadSmsCount: number;
-  cartItemsCount: number;
   isMobileOpen: boolean;
   onCloseMobileNav: () => void;
 }
@@ -24,7 +22,6 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
   activeTab,
   onTabChange,
   unreadSmsCount,
-  cartItemsCount,
   isMobileOpen,
   onCloseMobileNav,
 }) => {
@@ -49,12 +46,6 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       id: 'iot',
       label: t.tabIotSensors,
       icon: <Cpu className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />,
-    },
-    {
-      id: 'store',
-      label: t.tabStore,
-      icon: <Store className="w-4 h-4 sm:w-5 sm:h-5 text-[#991B1B]" />,
-      badge: cartItemsCount > 0 ? cartItemsCount : undefined,
     },
     {
       id: 'profile',

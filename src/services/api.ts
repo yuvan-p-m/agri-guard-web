@@ -1,6 +1,12 @@
 // API service for backend integration using native fetch
 import { Capacitor } from '@capacitor/core';
-import type { UserProfile } from '../types';
+import type {
+  CropAlertResponse,
+  CropRecommendationResponse,
+  MandiPricesResponse,
+  PriceForecastResponse,
+  UserProfile,
+} from '../types';
 
 /**
  * Dynamically resolves the active API base endpoint:
@@ -201,6 +207,21 @@ export const weatherAPI = {
     request(`/weather/forecast?${lat && lon ? `lat=${lat}&lon=${lon}` : `city=${encodeURIComponent(city || 'Nagpur')}`}`),
   getCurrent: (city?: string, lat?: number, lon?: number) =>
     request(`/weather/current?${lat && lon ? `lat=${lat}&lon=${lon}` : `city=${encodeURIComponent(city || 'Nagpur')}`}`),
+};
+
+// Crop recommendation and marketplace APIs
+export const cropAPI = {
+  getRecommendations: (location: string, language: string): Promise<CropRecommendationResponse> =>
+    request<CropRecommendationResponse>(`/crop/recommendations?location=${encodeURIComponent(location)}&language=${encodeURIComponent(language)}`),
+};
+
+export const marketplaceAPI = {
+  getMandiPrices: (crop: string, state: string): Promise<MandiPricesResponse> =>
+    request<MandiPricesResponse>(`/mandi-prices?crop=${encodeURIComponent(crop)}&state=${encodeURIComponent(state)}`),
+  getPriceForecast: (crop: string, state: string): Promise<PriceForecastResponse> =>
+    request<PriceForecastResponse>(`/price-forecast?crop=${encodeURIComponent(crop)}&state=${encodeURIComponent(state)}`),
+  getCropAlert: (crop: string): Promise<CropAlertResponse> =>
+    request<CropAlertResponse>(`/crop-alert?crop=${encodeURIComponent(crop)}`),
 };
 
 // Alert APIs
