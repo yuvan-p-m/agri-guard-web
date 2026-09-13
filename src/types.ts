@@ -156,7 +156,6 @@ export interface UserProfile {
   district: string;
   villageTaluka?: string;
   pincode?: string;
-  isLoggedIn: boolean;
 }
 
 export interface WeatherInfo {

@@ -10,9 +10,8 @@ import type {
 } from './types';
 import { useLanguage } from './i18n';
 import { cropDiseases } from './data/cropDiseases';
-import { demoProfiles, sampleWeatherStations, initialHistoryRecords } from './data/sampleHistory';
+import { sampleWeatherStations, initialHistoryRecords } from './data/sampleHistory';
 
-import { AuthPage } from './components/AuthPage';
 import { Header } from './components/Header';
 import { NavigationTabs, type DashboardTab } from './components/NavigationTabs';
 import { DiagnosticHub } from './components/DiagnosticHub';
@@ -26,9 +25,6 @@ import { ProfileFarmSettings } from './components/ProfileFarmSettings';
 import { weatherAPI } from './services/api';
 
 export const App: React.FC = () => {
-  // Page Routing State: Page 1 (Auth View) vs Page 2 (Main Dashboard)
-  const [currentPage, setCurrentPage] = useState<'auth' | 'dashboard'>('auth');
-  
   // Dashboard tab navigation state
   const [activeTab, setActiveTab] = useState<DashboardTab>('diagnosis');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -46,7 +42,6 @@ export const App: React.FC = () => {
     primaryCrop: 'Citrus (Orange / Lemon)',
     state: '',
     district: '',
-    isLoggedIn: false,
   });
   const [weather, setWeather] = useState<WeatherInfo>(sampleWeatherStations['Nagpur (Citrus Belt)']);
   const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(false);
@@ -97,43 +92,6 @@ export const App: React.FC = () => {
       setIsGpsDenied(true);
       fetchLiveWeatherByCity('Nagpur');
     }
-  };
-
-  // Auto-track location & fetch live weather on Dashboard Mount
-  useEffect(() => {
-    if (currentPage === 'dashboard') {
-      requestLiveGpsLocation();
-    }
-  }, [currentPage]);
-
-  // Auth Handlers: Prompt for GPS location permission immediately after sign in
-  const handleLoginSuccess = (profile: UserProfile) => {
-    setUser(profile);
-    setAcreage(profile.farmSize || 4.5);
-    if (profile.language) {
-      setLanguage(profile.language);
-    }
-    setCurrentPage('dashboard');
-    setActiveTab('diagnosis');
-    setIsAnalyzed(false);
-    requestLiveGpsLocation();
-  };
-
-  const handleLogout = () => {
-    setUser({
-      id: '',
-      name: 'Farmer Partner',
-      username: '',
-      phone: '',
-      language: language,
-      farmSize: 2.5,
-      farmUnit: 'Acres',
-      primaryCrop: 'Citrus (Orange / Lemon)',
-      state: '',
-      district: '',
-      isLoggedIn: false
-    });
-    setCurrentPage('auth');
   };
 
   const handleProfileSave = (profile: UserProfile) => {
@@ -198,24 +156,22 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'weather' || currentPage === 'dashboard') {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude: lat, longitude: lon } = pos.coords;
-            fetchLiveWeatherByCoords(lat, lon);
-          },
-          (err) => {
-            console.warn("GPS location permission denied or error, fallback to default city:", err);
-            fetchLiveWeatherByCity(weather.city || 'Nagpur');
-          },
-          { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-        );
-      } else {
-        fetchLiveWeatherByCity(weather.city || 'Nagpur');
-      }
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          fetchLiveWeatherByCoords(lat, lon);
+        },
+        (err) => {
+          console.warn("GPS location permission denied or error, fallback to default city:", err);
+          fetchLiveWeatherByCity(weather.city || 'Nagpur');
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      );
+    } else {
+      fetchLiveWeatherByCity(weather.city || 'Nagpur');
     }
-  }, [activeTab, currentPage]);
+  }, [activeTab]);
 
   const handleLocationSelect = (stationName: string) => {
     const cleanCity = stationName.split('(')[0].trim();
@@ -293,22 +249,7 @@ export const App: React.FC = () => {
     setIsMobileNavOpen(false);
   };
 
-  // ==========================================
-  // VIEW 1: Standalone Authentication Page
-  // ==========================================
-  if (currentPage === 'auth') {
-    return (
-      <AuthPage
-        language={language}
-        onLanguageChange={handleLanguageChange}
-        onLoginSuccess={handleLoginSuccess}
-      />
-    );
-  }
-
-  // ==========================================
-  // VIEW 2: Main Farmer Dashboard with isolated tab views
-  // ==========================================
+  // Main Farmer Dashboard with isolated tab views
   return (
     <div className="relative min-h-screen max-w-[100vw] overflow-x-hidden font-sans bg-earth-50 text-slate-800 antialiased pb-16 sm:pb-0">
       
@@ -329,7 +270,6 @@ export const App: React.FC = () => {
           language={language}
           onLanguageChange={handleLanguageChange}
           user={user}
-          onLogout={handleLogout}
           weather={weather}
           unreadNotifications={unreadAlertsCount}
           isMobileNavOpen={isMobileNavOpen}

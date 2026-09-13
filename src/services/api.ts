@@ -5,7 +5,6 @@ import type {
   CropRecommendationResponse,
   MandiPricesResponse,
   PriceForecastResponse,
-  UserProfile,
 } from '../types';
 
 /**
@@ -53,30 +52,6 @@ export function setCustomApiEndpoint(url: string): void {
 }
 
 export const API_BASE_URL = getApiBaseUrl();
-
-export interface AuthResponse {
-  access_token: string;
-  token_type: string;
-  user: UserProfile;
-}
-
-export interface RegisterPayload {
-  full_name: string;
-  email: string;
-  phone?: string;
-  password: string;
-  confirm_password: string;
-  crop_type?: string;
-  location?: string;
-  latitude?: number;
-  longitude?: number;
-  role?: string;
-}
-
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
 
 async function request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('access_token');
@@ -146,33 +121,6 @@ async function request<T = any>(endpoint: string, options: RequestInit = {}): Pr
   customError.original = lastError;
   throw customError;
 }
-
-// Auth APIs
-export const authAPI = {
-  register: async (data: RegisterPayload): Promise<AuthResponse> => {
-    const resData = await request<AuthResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    if (resData?.access_token) {
-      localStorage.setItem('access_token', resData.access_token);
-    }
-    return resData;
-  },
-  login: async (data: LoginPayload): Promise<AuthResponse> => {
-    const resData = await request<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    if (resData?.access_token) {
-      localStorage.setItem('access_token', resData.access_token);
-    }
-    return resData;
-  },
-  getMe: async (): Promise<UserProfile> => {
-    return request<UserProfile>('/auth/me');
-  }
-};
 
 // Disease Detection APIs
 export const diseaseAPI = {

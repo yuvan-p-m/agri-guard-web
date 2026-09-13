@@ -1,46 +1,4 @@
-import { HistoryRecord, SmsAlert, WeatherInfo, UserProfile } from '../types';
-
-export const demoProfiles: UserProfile[] = [
-  {
-    id: 'demo-rajesh',
-    name: 'Rajesh Kumar',
-    username: 'rajesh_farmer',
-    phone: '+91 98765 43210',
-    language: 'en',
-    farmSize: 4.5,
-    farmUnit: 'Acres',
-    primaryCrop: 'Citrus (Orange / Sweet Lime)',
-    state: 'Maharashtra',
-    district: 'Nagpur (Citrus Belt)',
-    isLoggedIn: true,
-  },
-  {
-    id: 'demo-murugan',
-    name: 'Murugan S.',
-    username: 'murugan_paddy',
-    phone: '+91 94432 18902',
-    language: 'ta',
-    farmSize: 2.5,
-    farmUnit: 'Acres',
-    primaryCrop: 'Paddy / Tomato',
-    state: 'Tamil Nadu',
-    district: 'Coimbatore',
-    isLoggedIn: true,
-  },
-  {
-    id: 'demo-sunita',
-    name: 'Sunita Devi',
-    username: 'sunita_krishi',
-    phone: '+91 97654 32189',
-    language: 'hi',
-    farmSize: 1.8,
-    farmUnit: 'Acres',
-    primaryCrop: 'Chilli & Vegetables',
-    state: 'Uttar Pradesh',
-    district: 'Varanasi',
-    isLoggedIn: true,
-  }
-];
+import { HistoryRecord, SmsAlert, WeatherInfo } from '../types';
 
 export const sampleWeatherStations: Record<string, WeatherInfo> = {
   'Nagpur (Citrus Belt)': {

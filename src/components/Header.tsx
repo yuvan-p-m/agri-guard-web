@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Sprout, 
-  LogOut, 
+  Server,
   CloudRain, 
   Sun, 
   Cloud, 
@@ -14,12 +14,12 @@ import {
 import type { Language, UserProfile, WeatherInfo } from '../types';
 import { languageNames, supportedLanguages } from '../i18n';
 import { useAppTranslation } from '../i18n';
+import { ServerEndpointModal } from './ServerEndpointModal';
 
 interface HeaderProps {
   language: Language;
   onLanguageChange: (lang: Language) => void;
   user: UserProfile;
-  onLogout: () => void;
   weather: WeatherInfo;
   unreadNotifications: number;
   onOpenNotifications: () => void;
@@ -31,7 +31,6 @@ export const Header: React.FC<HeaderProps> = ({
   language,
   onLanguageChange,
   user,
-  onLogout,
   weather,
   unreadNotifications,
   onOpenNotifications,
@@ -39,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileNav,
 }) => {
   const { t } = useAppTranslation();
+  const [isServerModalOpen, setIsServerModalOpen] = useState(false);
 
   const getWeatherIcon = (type: WeatherInfo['iconType']) => {
     switch (type) {
@@ -130,6 +130,16 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Agricultural Advisory Notifications */}
             <button
               type="button"
+              onClick={() => setIsServerModalOpen(true)}
+              className="p-2 rounded-xl text-slate-700 hover:text-agri-800 hover:bg-agri-50 border border-slate-200 transition-colors"
+              title={t.backendApiServer}
+              aria-label={t.backendApiServer}
+            >
+              <Server className="w-4 h-4 sm:w-5 sm:h-5 text-slate-800" />
+            </button>
+
+            <button
+              type="button"
               onClick={onOpenNotifications}
               className="relative p-2 rounded-xl text-slate-700 hover:text-agri-800 hover:bg-agri-50 border border-slate-200 transition-colors"
               title={t.openAlerts}
@@ -158,21 +168,14 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* Dedicated Logout Button */}
-            <button
-              type="button"
-              onClick={onLogout}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-300 hover:border-rose-300 text-xs font-extrabold transition-all"
-              title={t.logout}
-            >
-              <LogOut className="w-3.5 h-3.5 text-rose-600" />
-              <span className="hidden sm:inline">{t.logout.split(' ')[0]}</span>
-            </button>
-
           </div>
 
         </div>
       </div>
+      <ServerEndpointModal
+        isOpen={isServerModalOpen}
+        onClose={() => setIsServerModalOpen(false)}
+      />
     </header>
   );
 };
