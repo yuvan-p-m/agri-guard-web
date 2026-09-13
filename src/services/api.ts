@@ -1,11 +1,13 @@
 // API service for backend integration using native fetch
+import { Capacitor } from '@capacitor/core';
 import type { UserProfile } from '../types';
 
 /**
  * Dynamically resolves the active API base endpoint:
  * 1. Runtime override via localStorage ('api_endpoint_override')
- * 2. Environment variable VITE_API_BASE_URL
- * 3. Same-origin /api/v1 fallback for deployments that proxy the API
+ * 2. Environment variable VITE_API_BASE_URL (with auto-adjustment for native platforms)
+ * 3. Native mobile fallback: LAN IP (192.168.1.6:8000/api/v1) or Android Emulator (10.0.2.2:8000/api/v1)
+ * 4. Browser web default: 127.0.0.1:8000/api/v1
  */
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -16,11 +18,22 @@ export function getApiBaseUrl(): string {
   }
 
   const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+
   if (envUrl) {
-    return envUrl.replace(/\/+$/, '');
+    const cleanEnv = envUrl.replace(/\/+$/, '');
+    if (isNative && (cleanEnv.includes('localhost') || cleanEnv.includes('127.0.0.1'))) {
+      // Inside an Android native container, route localhost to 10.0.2.2 host alias
+      return cleanEnv.replace(/localhost|127\.0\.0\.1/g, '10.0.2.2');
+    }
+    return cleanEnv;
   }
 
-  return '/api/v1';
+  if (isNative) {
+    return 'http://10.0.2.2:8000/api/v1';
+  }
+
+  return 'http://127.0.0.1:8000/api/v1';
 }
 
 export function setCustomApiEndpoint(url: string): void {
@@ -61,10 +74,8 @@ export interface LoginPayload {
 
 async function request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('access_token');
-  const currentLang = (typeof window !== 'undefined' && (localStorage.getItem('agriguard_language') || localStorage.getItem('i18nextLng'))) || 'en';
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Language': currentLang,
     ...((options.headers as Record<string, string>) || {}),
   };
   
@@ -74,37 +85,60 @@ async function request<T = any>(endpoint: string, options: RequestInit = {}): Pr
 
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const primaryBaseUrl = getApiBaseUrl();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
 
-  try {
-    const response = await fetch(`${primaryBaseUrl}${cleanEndpoint}`, {
-      ...options,
-      headers,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+  // Candidates list for resilient mobile connections (primary, ADB reverse 127.0.0.1, emulator 10.0.2.2, physical LAN 192.168.1.5)
+  const candidateUrls = [
+    primaryBaseUrl,
+    ...(isNative 
+      ? ['http://127.0.0.1:8000/api/v1', 'http://10.0.2.2:8000/api/v1', 'http://192.168.1.5:8000/api/v1', 'http://192.168.1.6:8000/api/v1'] 
+      : ['http://127.0.0.1:8000/api/v1', 'http://10.0.2.2:8000/api/v1', 'http://192.168.1.5:8000/api/v1', 'http://192.168.1.6:8000/api/v1'])
+  ].filter((url, index, self) => self.indexOf(url) === index);
 
-    const data = await response.json().catch(() => null);
+  let lastError: any = null;
 
-    if (!response.ok) {
-      const error: any = new Error(data?.detail || `HTTP Error ${response.status}`);
-      error.response = { status: response.status, data };
-      throw error;
+  for (const candidateBase of candidateUrls) {
+    try {
+      const controller = new AbortController();
+      const timeoutMs = isNative ? 3500 : 6000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      const response = await fetch(`${candidateBase}${cleanEndpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const error: any = new Error(data?.detail || `HTTP Error ${response.status}`);
+        error.response = { status: response.status, data };
+        throw error;
+      }
+
+      // If a candidate succeeded and it was different from primary, remember it
+      if (candidateBase !== primaryBaseUrl) {
+        setCustomApiEndpoint(candidateBase);
+      }
+
+      return data as T;
+    } catch (err: any) {
+      // If it's a valid HTTP response with error status (e.g. 400 Bad Request, 401 Unauthorized), don't fallback to other servers
+      if (err?.response?.status) {
+        throw err;
+      }
+      lastError = err;
+      // Network/connection error -> try next candidate in loop
     }
-
-    return data as T;
-  } catch (err: any) {
-    clearTimeout(timeoutId);
-    if (err?.response?.status) {
-      throw err;
-    }
-    const customError: any = new Error(
-      `Unable to connect to backend server (${primaryBaseUrl}). Configure VITE_API_BASE_URL or use the server endpoint override.`
-    );
-    customError.original = err;
-    throw customError;
   }
+
+  const customError: any = new Error(
+    `Unable to connect to backend server (${primaryBaseUrl}). Tap 'Server IP' in the top header to configure or check network connection.`
+  );
+  customError.original = lastError;
+  throw customError;
 }
 
 // Auth APIs
@@ -136,107 +170,27 @@ export const authAPI = {
 
 // Disease Detection APIs
 export const diseaseAPI = {
-  predict: async (file: File, lang?: string) => {
-    // Guard: reject static sample/placeholder images — only allow real uploaded files
-    if (file.name === 'sample_leaf.jpg' || file.size < 2048) {
-      throw new Error('Please upload a real photo of a crop leaf, not a sample image.');
-    }
-
-    const currentLang = lang || (typeof window !== 'undefined' && (localStorage.getItem('agriguard_language') || localStorage.getItem('i18nextLng'))) || 'en';
+  predict: async (file: File) => {
     const token = localStorage.getItem('access_token');
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('language', currentLang);
-    const headers: Record<string, string> = {
-      'X-Language': currentLang,
-    };
+    const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const targetBase = getApiBaseUrl();
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-    try {
-      const res = await fetch(`${targetBase}/disease/predict?language=${encodeURIComponent(currentLang)}`, {
-        method: 'POST',
-        headers,
-        body: formData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.detail || `Server error ${res.status}`);
-      }
-
-      return await res.json();
-    } catch (err: unknown) {
-      clearTimeout(timeoutId);
-      if (err instanceof Error && !isNetworkError(err)) {
-        throw err;
-      }
-      throw new Error(
-        `Unable to connect to AI model server at ${targetBase}. ` +
-        (err instanceof Error ? err.message : String(err))
-      );
-    }
+    
+    const res = await fetch(`${API_BASE_URL}/disease/predict`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    return res.json();
   },
   history: () => request('/disease/history'),
-};
-
-/** Returns true if the error is a network/connectivity issue (not an HTTP-level error) */
-function isNetworkError(err: Error): boolean {
-  return (
-    err.name === 'AbortError' ||
-    err.name === 'TypeError' ||
-    err.message.includes('Failed to fetch') ||
-    err.message.includes('Network request failed') ||
-    err.message.includes('abort')
-  );
-}
-
-// AI Model Status API
-export const modelAPI = {
-  /** Checks if the backend is reachable and if the AI model is loaded */
-  getStatus: async (): Promise<{ model_loaded: boolean; model_id: string; status: string; api_reachable: boolean }> => {
-    const base = getApiBaseUrl();
-    for (const path of ['/model/status', '/health']) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(`${base}${path}`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (!res.ok) continue;
-        const data = await res.json();
-        return {
-          model_loaded: data.model_loaded ?? false,
-          model_id: data.model_id ?? 'unknown',
-          status: data.status ?? (data.model_loaded ? 'ready' : 'loading'),
-          api_reachable: true,
-        };
-      } catch {
-        // Try the health endpoint when model status is unavailable.
-      }
-    }
-
-    return { model_loaded: false, model_id: 'unreachable', status: 'offline', api_reachable: false };
-  },
-};
-
-// Crop Recommendation API
-export const cropAPI = {
-  getRecommendations: (location: string, lang?: string) => {
-    const currentLang = lang || (typeof window !== 'undefined' && (localStorage.getItem('agriguard_language') || localStorage.getItem('i18nextLng'))) || 'en';
-    return request(`/crop-recommendations?location=${encodeURIComponent(location)}&language=${encodeURIComponent(currentLang)}`);
-  },
 };
 
 // Sensor APIs
 export const sensorAPI = {
   addReading: (data: any) => request('/sensors/reading', { method: 'POST', body: JSON.stringify(data) }),
   getLatest: () => request('/sensors/latest'),
-  getLive: () => request('/sensors/live'),
 };
 
 // Weather APIs
@@ -255,8 +209,6 @@ export const alertsAPI = {
     request('/alerts/subscribe', { method: 'POST', body: JSON.stringify(data) }),
   sendWeatherAlert: (phone: string, alertMessage: string) =>
     request('/alerts/send-weather-alert', { method: 'POST', body: JSON.stringify({ phone, alert_message: alertMessage }) }),
-  sendTestSms: (data: { uid?: string; phone?: string; location?: string; name?: string }) =>
-    request('/alerts/send-test-sms', { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // Risk APIs
@@ -270,21 +222,4 @@ export const feedbackAPI = {
   impact: () => request('/feedback/impact'),
 };
 
-// Marketplace & Mandi Price APIs
-export const marketplaceAPI = {
-  getMandiPrices: (crop: string, state: string) =>
-    request('/mandi-prices', {
-      method: 'POST',
-      body: JSON.stringify({ crop, state }),
-    }),
-  getPriceForecast: (crop: string, state: string) =>
-    request('/price-forecast', {
-      method: 'POST',
-      body: JSON.stringify({ crop, state }),
-    }),
-  getCropAlert: (crop: string) =>
-    request(`/crop-alert?crop=${encodeURIComponent(crop)}`),
-};
-
 export default { request };
-

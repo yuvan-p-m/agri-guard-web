@@ -139,29 +139,27 @@ export interface DiseaseDiagnosis {
   sampleImage: string;
 }
 
-export interface GeminiTreatment {
-  immediate_steps: string;
-  pesticide_name: string;
-  active_ingredient?: string;
-  category?: string;
-  dosage: string;
-  application_method: string;
-  spray_timing?: string;
-  precaution: string;
-  phi_days?: string;
-  organic_alternative?: string | null;
+export interface EcomProduct {
+  id: string;
+  name: string;
+  category: 'Organic Bio-Fungicide' | 'Chemical Fungicide' | 'Pesticide' | 'Foliar Fertilizer' | 'Sprayer Equipment' | 'Soil Kit';
+  brand: string;
+  packSize: string;
+  price: number;
+  originalPrice: number;
+  rating: number;
+  reviewCount: number;
+  badge: 'Govt Certified' | 'Organic India' | 'Best Seller' | 'Next-Day Delivery';
+  inStock: boolean;
+  image: string;
+  description: { en: string; hi: string; ta: string };
+  vendor: string;
 }
 
-export interface ProgressionRisk {
-  risk: 'No Risk' | 'Low Risk' | 'Medium Risk' | 'High Risk' | 'Severe Outbreak Risk' | string;
-  progression_stage?: string;
-  vulnerability_window?: string;
-  message: string;
-  pathology_factors?: string[];
-  pesticide_recommendation?: GeminiTreatment | null;
-  treatment?: GeminiTreatment | null;
+export interface CartItem {
+  product: EcomProduct;
+  quantity: number;
 }
-
 
 export interface HistoryRecord {
   id: string;
@@ -190,34 +188,33 @@ export interface SmsAlert {
   isRead: boolean;
 }
 
-export interface MandiRecord {
-  state: string;
-  district: string;
-  market: string;
-  commodity: string;
-  min_price: string | number;
-  max_price: string | number;
-  modal_price: string | number;
-  arrival_date: string;
+export interface TrackingStep {
+  title: string;
+  desc: string;
+  time: string;
+  completed: boolean;
+  current: boolean;
 }
 
-export interface PriceForecastResponse {
-  crop: string;
-  state: string;
-  weekly_prices: { week: string; price: number }[];
-  forecast: number[];
-  trend: 'RISING' | 'FALLING' | 'STABLE';
-  pct_change: number;
-  verdict_title?: string;
-  recommendation: string;
-  record_count: number;
+export interface Order {
+  id: string;
+  orderNumber: string;
+  date: string;
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  paymentMethod: 'COD' | 'UPI' | 'KCC';
+  paymentDetails?: string;
+  shippingAddress: {
+    fullName: string;
+    phone: string;
+    villageTaluka: string;
+    district: string;
+    state: string;
+    pincode: string;
+  };
+  status: 'Confirmed' | 'Packed' | 'In Transit' | 'Delivered';
+  estimatedDelivery: string;
+  trackingSteps: TrackingStep[];
 }
-
-export interface CropAlertResponse {
-  crop: string;
-  alert_type: string;
-  message: string;
-  recommendation: string;
-}
-
-

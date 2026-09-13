@@ -13,12 +13,12 @@ import {
   FolderOpen
 } from 'lucide-react';
 import type { Language, DiseaseDiagnosis } from '../types';
-import { useAppTranslation } from '../i18n';
+import { translations } from '../data/translations';
 import { cropDiseases } from '../data/cropDiseases';
 
 interface DiagnosticHubProps {
   language: Language;
-  onAnalyze: (file: File | null, customImage?: string, symptomsText?: string, targetDiseaseSample?: DiseaseDiagnosis) => void;
+  onAnalyze: (diagnosis: DiseaseDiagnosis, customImage?: string, symptomsText?: string) => void;
   isAnalyzing: boolean;
   selectedAcreage: number;
   onAcreageChange: (acres: number) => void;
@@ -41,16 +41,14 @@ export const DiagnosticHub: React.FC<DiagnosticHubProps> = ({
   
   // No default pre-loaded image on page load (Clean empty dropzone state)
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedCropId, setSelectedCropId] = useState<string>('');
+  const [selectedCropId, setSelectedCropId] = useState<string>(cropDiseases[0].id);
   const [symptomText, setSymptomText] = useState<string>('');
   const [isRecording, setIsRecording] = useState<boolean>(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const { t, i18n } = useAppTranslation();
-  const currentLang = (i18n.language || language || 'en') as Language;
+  const t = translations[language];
 
   // Quick symptom chips
   const symptomTags = [
@@ -65,7 +63,6 @@ export const DiagnosticHub: React.FC<DiagnosticHubProps> = ({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setUploadedImagePreview(url);
     }
@@ -73,7 +70,6 @@ export const DiagnosticHub: React.FC<DiagnosticHubProps> = ({
 
   const handleSampleCropSelect = (disease: DiseaseDiagnosis) => {
     setSelectedCropId(disease.id);
-    setSelectedFile(null);
     setUploadedImagePreview(disease.sampleImage);
     if (disease.symptoms[language]?.length) {
       setSymptomText(disease.symptoms[language].join(', '));
@@ -95,7 +91,7 @@ export const DiagnosticHub: React.FC<DiagnosticHubProps> = ({
     if (SpeechRecognition) {
       try {
         const recognition = new SpeechRecognition();
-        recognition.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'ta' ? 'ta-IN' : 'en-US';
+        recognition.lang = language === 'hi' ? 'hi-IN' : language === 'ta' ? 'ta-IN' : 'en-US';
         recognition.continuous = false;
         recognition.interimResults = false;
 
@@ -123,11 +119,11 @@ export const DiagnosticHub: React.FC<DiagnosticHubProps> = ({
       setIsRecording(true);
       setTimeout(() => {
         const mockVoiceText = 
-          currentLang === 'hi' 
+          language === 'hi' 
             ? 'पत्तियों पर भूरे रंग के धब्बे दिख रहे हैं और पत्तियां नीचे की ओर गिर रही हैं।'
-            : currentLang === 'ta'
+            : language === 'ta'
             ? 'இலைகளில் பழுப்பு நிற புள்ளிகள் மற்றும் மஞ்சள் நிற வளையங்கள் தெரிகின்றன.'
-            : 'Noticed brown spots with yellow halos on crop leaves and light stem blemishes.';
+            : 'Noticed brown spots with yellow margins on citrus leaves and light stem blemishes.';
         setSymptomText((prev) => (prev ? `${prev} ${mockVoiceText}` : mockVoiceText));
         setIsRecording(false);
       }, 2000);
@@ -135,15 +131,14 @@ export const DiagnosticHub: React.FC<DiagnosticHubProps> = ({
   };
 
   const handleTriggerAnalysis = () => {
-    const targetDisease = cropDiseases.find((d) => d.id === selectedCropId);
-    onAnalyze(selectedFile, uploadedImagePreview || undefined, symptomText, targetDisease);
+    const targetDisease = cropDiseases.find((d) => d.id === selectedCropId) || cropDiseases[0];
+    onAnalyze(targetDisease, uploadedImagePreview || targetDisease.sampleImage, symptomText);
   };
 
   const handleClearAnalysis = () => {
     setActiveTab('upload');
     setUploadedImagePreview(null);
-    setSelectedFile(null);
-    setSelectedCropId('');
+    setSelectedCropId(cropDiseases[0].id);
     setSymptomText('');
     onClearAnalysis();
   };
@@ -328,7 +323,33 @@ export const DiagnosticHub: React.FC<DiagnosticHubProps> = ({
               )}
             </div>
 
-
+            {/* Pre-Loaded Sample Crops for Instant 1-Click Testing */}
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">
+                {t.orSelectSample}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                {cropDiseases.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => handleSampleCropSelect(d)}
+                    className={`p-2.5 rounded-2xl text-left border transition-all flex flex-col justify-between text-xs ${
+                      selectedCropId === d.id && uploadedImagePreview === d.sampleImage
+                        ? 'border-agri-600 bg-agri-100/90 ring-2 ring-agri-600/30 shadow-sm'
+                        : 'border-slate-200 hover:border-agri-300 bg-slate-50/70 hover:bg-white'
+                    }`}
+                  >
+                    <div className="font-extrabold text-slate-900 truncate">
+                      {d.cropName[language].split('/')[0]}
+                    </div>
+                    <div className="text-[10px] text-agri-700 font-bold truncate mt-1">
+                      {d.diseaseName[language].split('(')[0]}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
           </div>
         )}

@@ -15,7 +15,7 @@ import {
   Server
 } from 'lucide-react';
 import type { Language, UserProfile } from '../types';
-import { useAppTranslation } from '../i18n';
+import { translations } from '../data/translations';
 import { authAPI } from '../services/api';
 import { GpsLocationTracker } from './GpsLocationTracker';
 import { ServerEndpointModal } from './ServerEndpointModal';
@@ -31,7 +31,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   onLanguageChange,
   onLoginSuccess,
 }) => {
-  const { t, i18n } = useAppTranslation();
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
@@ -58,6 +57,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [longitude, setLongitude] = useState<number | undefined>(undefined);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | undefined>(undefined);
   const [isServerModalOpen, setIsServerModalOpen] = useState<boolean>(false);
+
+  const t = translations[language];
 
   const handleCoordinatesChange = (lat: number, lon: number, accuracy?: number) => {
     setLatitude(lat);
@@ -213,29 +214,39 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           {/* Language Switcher */}
           <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md p-1.5 rounded-2xl border border-white/30 shadow-lg">
             <Languages className="w-4 h-4 text-citrus-300 ml-2 mr-1 hidden sm:inline" />
-            {(['en', 'hi', 'ta'] as const).map((langCode) => {
-              const labels = { en: 'English', hi: 'हिंदी', ta: 'தமிழ்' };
-              const isSelected = (i18n.language || language) === langCode;
-              return (
-                <button
-                  key={langCode}
-                  type="button"
-                  onClick={() => {
-                    i18n.changeLanguage(langCode);
-                    localStorage.setItem('agriguard_language', langCode);
-                    localStorage.setItem('i18nextLng', langCode);
-                    onLanguageChange(langCode);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    isSelected
-                      ? 'bg-white text-agri-950 shadow-md scale-105'
-                      : 'text-white/90 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {labels[langCode]}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => onLanguageChange('en')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                language === 'en'
+                  ? 'bg-white text-agri-950 shadow-md scale-105'
+                  : 'text-white/90 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => onLanguageChange('hi')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                language === 'hi'
+                  ? 'bg-white text-agri-950 shadow-md scale-105'
+                  : 'text-white/90 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              हिंदी
+            </button>
+            <button
+              type="button"
+              onClick={() => onLanguageChange('ta')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                language === 'ta'
+                  ? 'bg-white text-agri-950 shadow-md scale-105'
+                  : 'text-white/90 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              தமிழ்
+            </button>
           </div>
         </div>
       </header>

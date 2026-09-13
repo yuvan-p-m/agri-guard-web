@@ -13,12 +13,12 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Language, DiseaseDiagnosis, UserProfile } from '../types';
-import { useAppTranslation } from '../i18n';
+import { translations } from '../data/translations';
 
 interface PrescriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  diagnosis: DiseaseDiagnosis | null;
+  diagnosis: DiseaseDiagnosis;
   user: UserProfile;
   acreage: number;
   language: Language;
@@ -32,10 +32,9 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
   acreage,
   language,
 }) => {
-  void language;
-  const { t } = useAppTranslation();
+  const t = translations[language];
 
-  if (!isOpen || !diagnosis) return null;
+  if (!isOpen) return null;
 
   const handlePrint = () => {
     window.print();
@@ -46,11 +45,6 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
     month: 'short',
     year: 'numeric'
   });
-
-  const safeLang = (['en', 'hi', 'ta'].includes(language) ? language : 'en') as Language;
-  const diseaseNameDisplay = diagnosis.diseaseName?.[safeLang] || diagnosis.diseaseName?.en || 'Identified Plant Condition';
-  const organicRemedies = diagnosis.organicProtocol?.remedies || [];
-  const chemicalRemedies = diagnosis.chemicalProtocol?.remedies || [];
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fade-in">
@@ -96,13 +90,13 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
           <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
             <div>
               <p className="text-slate-500 font-medium">Farmer Name / ID:</p>
-              <p className="font-extrabold text-slate-900 text-sm mt-0.5">{user.name || 'Farmer Partner'}</p>
-              <p className="text-slate-600 font-mono mt-0.5">{user.phone || 'N/A'}</p>
+              <p className="font-extrabold text-slate-900 text-sm mt-0.5">{user.name}</p>
+              <p className="text-slate-600 font-mono mt-0.5">{user.phone}</p>
             </div>
             <div>
               <p className="text-slate-500 font-medium">Date & Field Area:</p>
               <p className="font-extrabold text-slate-900 text-sm mt-0.5">{todayStr}</p>
-              <p className="text-agri-800 font-bold mt-0.5">{acreage} {t.acresUnit || 'Acres'} ({user.district || 'District'}, {user.state || 'State'})</p>
+              <p className="text-agri-800 font-bold mt-0.5">{acreage} {t.acresUnit} ({user.district}, {user.state})</p>
             </div>
           </div>
 
@@ -117,17 +111,17 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
               </span>
             </div>
             <h4 className="text-lg font-black text-slate-900 mt-1">
-              {diseaseNameDisplay}
+              {diagnosis.diseaseName[language]}
             </h4>
             <p className="text-xs text-agri-800 italic font-mono mt-0.5">
-              Pathogen: {diagnosis.scientificName || 'Identified Pathogen'} ({diagnosis.pathogenType || 'Pathogen'})
+              Pathogen: {diagnosis.scientificName} ({diagnosis.pathogenType})
             </p>
           </div>
 
           {/* Prescribed Dosages Breakdown */}
           <div>
             <h5 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2.5">
-              Prescribed Treatment & Dosages (For {acreage} {t.acresUnit || 'Acres'})
+              Prescribed Treatment & Dosages (For {acreage} {t.acresUnit})
             </h5>
             
             <div className="space-y-3">
@@ -137,8 +131,8 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                   <span>Protocol A: Organic Bio-Treatment</span>
                 </div>
-                {organicRemedies.map((rem) => {
-                  const calc = typeof rem.dosageFormula === 'function' ? rem.dosageFormula(acreage) : { amount: 'Recommended dosage', waterVolume: '200 L' };
+                {diagnosis.organicProtocol.remedies.map((rem) => {
+                  const calc = rem.dosageFormula(acreage);
                   return (
                     <div key={rem.id} className="text-xs text-slate-700 mt-1 pl-5">
                       <strong className="text-slate-900">{rem.name}:</strong> {calc.amount} in {calc.waterVolume} water.
@@ -154,8 +148,8 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                   <CheckCircle2 className="w-3.5 h-3.5 text-blue-700" />
                   <span>Protocol B: Targeted Chemical Remedial</span>
                 </div>
-                {chemicalRemedies.map((rem) => {
-                  const calc = typeof rem.dosageFormula === 'function' ? rem.dosageFormula(acreage) : { amount: 'Recommended dosage', waterVolume: '200 L' };
+                {diagnosis.chemicalProtocol.remedies.map((rem) => {
+                  const calc = rem.dosageFormula(acreage);
                   return (
                     <div key={rem.id} className="text-xs text-slate-700 mt-1 pl-5">
                       <strong className="text-slate-900">{rem.name}:</strong> {calc.amount} in {calc.waterVolume} water.

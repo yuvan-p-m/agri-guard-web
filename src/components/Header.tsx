@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
 import { 
   Sprout, 
+  Volume2, 
+  VolumeX, 
+  ShoppingCart, 
   LogOut, 
   CloudRain, 
   Sun, 
@@ -10,18 +12,10 @@ import {
   ShieldCheck,
   Languages,
   MapPin,
-  Bell,
-  Smartphone
+  Bell
 } from 'lucide-react';
-import type { Language, UserProfile, WeatherInfo } from '../types';
-import { alertsAPI } from '../services/api';
-
-interface ModelStatusInfo {
-  api_reachable: boolean;
-  model_loaded: boolean;
-  model_id: string;
-  status: string;
-}
+import type { Language, UserProfile, WeatherInfo, CartItem } from '../types';
+import { translations } from '../data/translations';
 
 interface HeaderProps {
   language: Language;
@@ -29,13 +23,14 @@ interface HeaderProps {
   user: UserProfile;
   onLogout: () => void;
   weather: WeatherInfo;
+  cart: CartItem[];
+  onOpenCart: () => void;
   isSpeaking: boolean;
   onToggleSpeech: () => void;
   unreadNotifications: number;
   onOpenNotifications: () => void;
   isMobileNavOpen: boolean;
   onToggleMobileNav: () => void;
-  modelStatus?: ModelStatusInfo;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -44,128 +39,17 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   onLogout,
   weather,
+  cart,
+  onOpenCart,
   isSpeaking,
   onToggleSpeech,
   unreadNotifications,
   onOpenNotifications,
   isMobileNavOpen,
   onToggleMobileNav,
-  modelStatus,
 }) => {
-  const { t, i18n } = useTranslation();
-  const activeLang = ((i18n.language || language || 'en').substring(0, 2)) as Language;
-  const [isSendingHeaderSms, setIsSendingHeaderSms] = React.useState(false);
-
-  const handleHeaderTestSms = async () => {
-    setIsSendingHeaderSms(true);
-    try {
-      const phoneToSend = user?.phone || prompt('Enter 10-digit mobile number to receive live Fast2SMS advisory:');
-      if (!phoneToSend) {
-        setIsSendingHeaderSms(false);
-        return;
-      }
-      const res = await alertsAPI.sendTestSms({
-        uid: user?.id,
-        phone: phoneToSend,
-        location: weather.city || 'Nagpur',
-        name: user?.name || 'Farmer Partner'
-      });
-      if (res?.success) {
-        alert(`✅ Fast2SMS Live Advisory sent successfully to ${phoneToSend}!\n\nMessage: ${res.message || 'Weather & Irrigation Advisory delivered.'}`);
-      } else {
-        alert(`⚠️ Fast2SMS notice: ${res?.notice || res?.warning || 'Dispatched to gateway'}`);
-      }
-    } catch (err: any) {
-      alert(`⚠️ Failed to send test SMS: ${err?.message || 'Gateway error'}`);
-    } finally {
-      setIsSendingHeaderSms(false);
-    }
-  };
-
-  // Initialize and mount Google Translate Widget inside #google_translate_element
-  useEffect(() => {
-    const initWidget = () => {
-      if (typeof window !== 'undefined' && (window as any).googleTranslateElementInit && (window as any).google?.translate) {
-        const el = document.getElementById('google_translate_element');
-        if (el && (!el.hasChildNodes() || el.children.length === 0)) {
-          (window as any).googleTranslateElementInit();
-        }
-      }
-    };
-
-    initWidget();
-    const interval = setInterval(initWidget, 500);
-    const timeout = setTimeout(() => clearInterval(interval), 5000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, []);
-
-  // Sync state if user directly interacts with Google Translate's .goog-te-combo dropdown
-  useEffect(() => {
-    const handleGoogleComboChange = () => {
-      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
-      if (select && select.value) {
-        const val = select.value as Language;
-        if (val === 'en' || val === 'hi' || val === 'ta') {
-          i18n.changeLanguage(val);
-          localStorage.setItem('agriguard_language', val);
-          localStorage.setItem('i18nextLng', val);
-          onLanguageChange(val);
-        }
-      }
-    };
-
-    const attachTimer = setInterval(() => {
-      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
-      if (select) {
-        select.addEventListener('change', handleGoogleComboChange);
-        clearInterval(attachTimer);
-      }
-    }, 400);
-
-    return () => clearInterval(attachTimer);
-  }, [i18n, onLanguageChange]);
-
-  const handleLanguageSelect = (newLang: Language) => {
-    i18n.changeLanguage(newLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('agriguard_language', newLang);
-      localStorage.setItem('i18nextLng', newLang);
-
-      // Set Google Website Translator cookie to translate the entire page dynamically
-      const cookieValue = `/en/${newLang}`;
-      document.cookie = `googtrans=${cookieValue}; path=/;`;
-      if (window.location.hostname && window.location.hostname.indexOf('.') !== -1) {
-        document.cookie = `googtrans=${cookieValue}; path=/; domain=.${window.location.hostname};`;
-      }
-
-      // Update native Google Translate dropdown and trigger DOM translation
-      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
-      if (select) {
-        let matched = false;
-        for (let i = 0; i < select.options.length; i++) {
-          if (select.options[i].value === newLang) {
-            select.selectedIndex = i;
-            matched = true;
-            break;
-          }
-        }
-        if (!matched && newLang === 'en') {
-          for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].text.toLowerCase().includes('english') || select.options[i].value === '') {
-              select.selectedIndex = i;
-              break;
-            }
-          }
-        }
-        select.dispatchEvent(new Event('change'));
-      }
-    }
-    onLanguageChange(newLang);
-  };
+  const t = translations[language];
+  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   const getWeatherIcon = (type: WeatherInfo['iconType']) => {
     switch (type) {
@@ -215,15 +99,13 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Location & Live Field Weather Pill */}
           <div className="hidden lg:flex items-center gap-3 px-3.5 py-1.5 rounded-2xl bg-agri-50/90 border border-agri-200/80 text-xs shadow-inner">
             <div className="flex items-center gap-1.5 font-bold text-slate-800">
-              <MapPin className={`w-3.5 h-3.5 text-agri-700 ${weather.city.toLowerCase().includes('fetching') ? 'animate-pulse' : ''}`} />
-              <span>{weather.city.toLowerCase().includes('fetching') ? t('fetchingLocation', 'Fetching location...') : `${weather.city}:`}</span>
-              {!weather.city.toLowerCase().includes('fetching') && (
-                <span className="text-agri-800 font-extrabold">{weather.tempC}°C</span>
-              )}
+              <MapPin className="w-3.5 h-3.5 text-agri-700" />
+              <span>{weather.city}:</span>
+              <span className="text-agri-800 font-extrabold">{weather.tempC}°C</span>
             </div>
             <div className="h-3 w-px bg-agri-300" />
             <div className="text-slate-600 font-medium">
-              {t('humidity', 'Humidity')}: <strong className="text-slate-800">{weather.humidity}%</strong>
+              {t.humidity}: <strong className="text-slate-800">{weather.humidity}%</strong>
             </div>
             <div className="h-3 w-px bg-agri-300" />
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
@@ -231,73 +113,76 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-rose-100 text-rose-700 border border-rose-200 animate-pulse' 
                 : 'bg-emerald-100 text-emerald-800'
             }`}>
-              {t(`risk${weather.fungalRiskLevel.replace(/\s+/g, '')}`, `${weather.fungalRiskLevel} Risk`)}
+              {weather.fungalRiskLevel} Risk
             </span>
           </div>
 
           {/* Right Action Bar */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
             
-            {/* Google Website Translator Widget & Navbar Language Switcher */}
-            <div className="flex items-center gap-1.5 bg-slate-100/90 py-1 px-2 rounded-xl border border-slate-200 shadow-inner">
-              <Languages className="w-3.5 h-3.5 text-agri-700 ml-0.5 shrink-0 hidden sm:inline" />
-              
-              {/* Google Website Translator Widget (English, Hindi, Tamil) */}
-              <div id="google_translate_element" className="inline-flex items-center" />
-
-              {/* Quick 1-Click Language Buttons */}
-              <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-slate-300">
-                <button
-                  type="button"
-                  onClick={() => handleLanguageSelect('en')}
-                  className={`px-1.5 sm:px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
-                    activeLang === 'en'
-                      ? 'bg-white text-agri-950 shadow-xs border border-slate-200 font-extrabold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="English"
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLanguageSelect('hi')}
-                  className={`px-1.5 sm:px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
-                    activeLang === 'hi'
-                      ? 'bg-white text-agri-950 shadow-xs border border-slate-200 font-extrabold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="हिंदी"
-                >
-                  हिंदी
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLanguageSelect('ta')}
-                  className={`px-1.5 sm:px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
-                    activeLang === 'ta'
-                      ? 'bg-white text-agri-950 shadow-xs border border-slate-200 font-extrabold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="தமிழ்"
-                >
-                  தமிழ்
-                </button>
-              </div>
+            {/* Language Switcher */}
+            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200 shadow-inner">
+              <Languages className="w-3.5 h-3.5 text-slate-700 ml-1.5 mr-1 hidden sm:inline" />
+              <button
+                type="button"
+                onClick={() => onLanguageChange('en')}
+                className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  language === 'en'
+                    ? 'bg-white text-agri-950 shadow-sm border border-slate-200'
+                    : 'text-slate-700 hover:text-slate-950'
+                }`}
+                title="Switch to English"
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => onLanguageChange('hi')}
+                className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  language === 'hi'
+                    ? 'bg-white text-agri-950 shadow-sm border border-slate-200'
+                    : 'text-slate-700 hover:text-slate-950'
+                }`}
+                title="हिंदी में बदलें"
+              >
+                हिंदी
+              </button>
+              <button
+                type="button"
+                onClick={() => onLanguageChange('ta')}
+                className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  language === 'ta'
+                    ? 'bg-white text-agri-950 shadow-sm border border-slate-200'
+                    : 'text-slate-700 hover:text-slate-950'
+                }`}
+                title="தமிழில் மாற்றுக"
+              >
+                தமிழ்
+              </button>
             </div>
 
-
-
-            {/* Demo Fast2SMS Live Trigger Button */}
+            {/* Read Aloud (TTS) Accessibility Button */}
             <button
               type="button"
-              onClick={handleHeaderTestSms}
-              disabled={isSendingHeaderSms}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-agri-700 hover:from-emerald-700 hover:to-agri-800 text-white border border-emerald-500 shadow-md shadow-emerald-950/20 text-xs font-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-              title="Send live test SMS to your mobile phone via Fast2SMS"
+              onClick={onToggleSpeech}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                isSpeaking 
+                  ? 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse shadow-sm' 
+                  : 'bg-agri-50 text-agri-800 border-agri-200 hover:bg-agri-100 hover:border-agri-300'
+              }`}
+              title={isSpeaking ? t.stopAudio : t.readAloud}
             >
-              <Smartphone className="w-3.5 h-3.5 text-citrus-300 animate-pulse" />
-              <span className="hidden xs:inline">{isSendingHeaderSms ? 'Sending...' : 'Send Test SMS'}</span>
+              {isSpeaking ? (
+                <>
+                  <VolumeX className="w-4 h-4 text-rose-600 animate-bounce" />
+                  <span className="hidden md:inline">{t.stopAudio}</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-4 h-4 text-agri-700" />
+                  <span className="hidden md:inline">{t.readAloud}</span>
+                </>
+              )}
             </button>
 
             {/* Agricultural Advisory Notifications */}
@@ -316,6 +201,21 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
+            {/* Farm Supplies Cart */}
+            <button
+              type="button"
+              onClick={onOpenCart}
+              className="relative p-2 rounded-xl text-slate-700 hover:text-agri-800 hover:bg-agri-50 border border-slate-200 transition-colors"
+              title={t.cartTotal}
+              aria-label={t.cartTotal}
+            >
+              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-800" />
+              {totalCartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-agri-600 text-white rounded-full text-[10px] font-black flex items-center justify-center">
+                  {totalCartCount}
+                </span>
+              )}
+            </button>
 
             {/* Farmer Profile Badge */}
             <div className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-agri-100/90 border border-agri-300 text-agri-950">
@@ -337,10 +237,10 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={onLogout}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-300 hover:border-rose-300 text-xs font-extrabold transition-all"
-              title={t('logout', 'Logout & Switch Account')}
+              title={t.logout}
             >
               <LogOut className="w-3.5 h-3.5 text-rose-600" />
-              <span className="hidden sm:inline">{t('logout', 'Logout & Switch Account').split(' ')[0]}</span>
+              <span className="hidden sm:inline">{t.logout.split(' ')[0]}</span>
             </button>
 
           </div>

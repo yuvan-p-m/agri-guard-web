@@ -1,32 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Cpu,
-  Wifi,
-  RefreshCw,
-  Thermometer,
-  Droplets,
-  CloudRain,
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  AlertCircle,
-  Radio,
-  ArrowRight,
-  Power,
-  Zap,
+import { 
+  Cpu, 
+  Wifi, 
+  BatteryCharging, 
+  RefreshCw, 
+  Thermometer, 
+  Droplets, 
+  CloudRain, 
+  Sun, 
+  Sparkles, 
+  Activity, 
+  Layers, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Radio, 
+  ShieldCheck,
+  Flame,
+  ArrowRight
 } from 'lucide-react';
-import type { HardwareState, Language } from '../types';
-import { useAppTranslation } from '../i18n';
-import {
-  subscribeToLiveSensors,
-  fetchSensorSnapshotOnce,
-  type InterpretedSensorSnapshot,
-  type SensorStatus,
-} from '../services/sensorService';
+import type { HardwareState, Language, IoTSensorData } from '../types';
+import { translations } from '../data/translations';
 
 interface IoTSensorsTabProps {
   language: Language;
   onNavigateToDiagnosis?: () => void;
+  onNavigateToStore?: () => void;
   hardwareState: HardwareState;
   onPairHardware: () => void;
 }
@@ -34,135 +32,127 @@ interface IoTSensorsTabProps {
 export const IoTSensorsTab: React.FC<IoTSensorsTabProps> = ({
   language,
   onNavigateToDiagnosis,
+  onNavigateToStore,
   hardwareState,
   onPairHardware,
 }) => {
-  const { t } = useAppTranslation();
-  const [snapshot, setSnapshot] = useState<InterpretedSensorSnapshot | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const t = translations[language];
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string>('Connecting...');
+  const [lastRefreshedTime, setLastRefreshedTime] = useState<string>('Just now');
 
-  // Live listener to Firebase Realtime Database (`sensors` path)
+  // Live telemetry state (simulating real-time sensor node readings)
+  const [telemetry, setTelemetry] = useState<IoTSensorData>({
+    deviceId: hardwareState.deviceId || 'ESP32-AGRI-01',
+    nodeName: 'ESP32 / Arduino Node #01',
+    lastUpdated: 'Live Stream: 2 seconds ago',
+    isOnline: hardwareState.isConnected,
+    batteryLevel: 94,
+    signalStrengthDbm: -68,
+    ambientTempC: 28.5,
+    soilTempC: 24.2,
+    ambientHumidityPct: 78,
+    soilMoisturePct: 65,
+    soilMoistureStatus: 'Adequate',
+    rainStatus: 'No Rain',
+    rainIntensityMmHr: 0.0,
+    solarRadiationWm2: 740,
+    npk: {
+      nitrogenMgKg: 140,
+      nitrogenStatus: 'Sufficient',
+      phosphorusMgKg: 35,
+      phosphorusStatus: 'Low',
+      potassiumMgKg: 210,
+      potassiumStatus: 'Optimal',
+    },
+    aiAdvisory: {
+      en: 'High soil moisture (65%) combined with warm ambient temperature (28.5°C) elevates fungal spore propagation risk by 40%. Ensure field furrows are drained. Phosphorus is below optimal (35 mg/kg); apply Organic Rock Phosphate or SSP during next irrigation cycle.',
+      hi: 'मिट्टी की 65% नमी और 28.5°C तापमान से फफूंद के बीजाणु फैलने का खतरा 40% बढ़ जाता है। खेत में जल निकासी सुनिश्चित करें। फास्फोरस 35 mg/kg पर कम है; अगली सिंचाई में सिंगल सुपर फॉस्फेट या रॉक फॉस्फेट दें।',
+      ta: 'மண்ணின் ஈரப்பதம் (65%) மற்றும் 28.5°C வெப்பம் இணைந்து பூஞ்சை தொற்று அபாயத்தை 40% அதிகரிக்கிறது. வயல் வடிகால் வசதியை உறுதி செய்யவும். பாஸ்பரஸ் சத்து குறைவாக உள்ளது (35 mg/kg); அடுத்த பாசனத்தில் இயற்கை பாஸ்பேட் உரம் இடவும்.'
+    }
+  });
+
   useEffect(() => {
-    setIsLoading(true);
-    const unsubscribe = subscribeToLiveSensors((data) => {
-      setSnapshot(data);
-      setIsLoading(false);
-      setIsRefreshing(false);
-      setLastSyncTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    });
+    setTelemetry((current) => ({
+      ...current,
+      deviceId: hardwareState.deviceId || 'ESP32-AGRI-01',
+      nodeName: hardwareState.deviceName,
+      isOnline: hardwareState.isConnected,
+      lastUpdated: hardwareState.isConnected ? 'Live Stream: just connected' : 'Waiting for hardware connection',
+    }));
+  }, [hardwareState]);
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  const handleManualRefresh = async () => {
+  const handleManualRefresh = () => {
     setIsRefreshing(true);
-    try {
-      const data = await fetchSensorSnapshotOnce();
-      setSnapshot(data);
-      setLastSyncTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    } catch (e) {
-      console.error('Manual refresh failed:', e);
-    } finally {
+    setTimeout(() => {
+      // Simulate real micro-climate fluctuations
+      const tempDelta = (Math.random() * 0.8 - 0.4);
+      const humDelta = Math.floor(Math.random() * 5 - 2);
+      const moistureDelta = Math.floor(Math.random() * 4 - 2);
+      const nDelta = Math.floor(Math.random() * 6 - 3);
+      const pDelta = Math.floor(Math.random() * 4 - 2);
+      const kDelta = Math.floor(Math.random() * 6 - 3);
+
+      setTelemetry(prev => ({
+        ...prev,
+        ambientTempC: parseFloat((prev.ambientTempC + tempDelta).toFixed(1)),
+        soilTempC: parseFloat((prev.soilTempC + tempDelta * 0.5).toFixed(1)),
+        ambientHumidityPct: Math.min(95, Math.max(50, prev.ambientHumidityPct + humDelta)),
+        soilMoisturePct: Math.min(90, Math.max(30, prev.soilMoisturePct + moistureDelta)),
+        npk: {
+          ...prev.npk,
+          nitrogenMgKg: Math.max(100, prev.npk.nitrogenMgKg + nDelta),
+          phosphorusMgKg: Math.max(20, prev.npk.phosphorusMgKg + pDelta),
+          potassiumMgKg: Math.max(150, prev.npk.potassiumMgKg + kDelta),
+        }
+      }));
+
+      setLastRefreshedTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       setIsRefreshing(false);
-    }
+    }, 800);
   };
-
-  const getStatusBadge = (status: SensorStatus) => {
-    switch (status) {
-      case 'Optimal':
-        return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            <span>Optimal</span>
-          </span>
-        );
-      case 'Low':
-        return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 text-amber-600" />
-            <span>Low</span>
-          </span>
-        );
-      case 'High':
-        return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-orange-100 text-orange-900 border border-orange-300 flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3 text-orange-600" />
-            <span>High</span>
-          </span>
-        );
-      case 'Critical':
-        return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-900 border border-rose-300 flex items-center gap-1 animate-pulse">
-            <AlertTriangle className="w-3 h-3 text-rose-600" />
-            <span>Critical</span>
-          </span>
-        );
-      case 'No reading':
-      default:
-        return (
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-            <span>No reading</span>
-          </span>
-        );
-    }
-  };
-
-  const readings = snapshot?.readings || {};
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto animate-fade-in">
-      {/* 3 or more zero/no-reading warning banner */}
-      {snapshot?.hardwareWarning && (
-        <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 sm:p-5 shadow-lg flex items-start gap-3.5">
-          <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5 animate-bounce" />
-          <div className="space-y-1">
-            <h4 className="text-sm font-black text-amber-900 tracking-tight">Hardware Connection Alert</h4>
-            <p className="text-xs sm:text-sm text-amber-800 font-medium leading-relaxed">
-              {snapshot.hardwareWarning}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Header card with status & stream information */}
+      
+      {/* ========================================================= */}
+      {/* A. STATUS & HARDWARE CONNECTION HEADER                    */}
+      {/* ========================================================= */}
       <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-xl border border-agri-200/80">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-2xs ${
-                  snapshot?.available
-                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                    : 'bg-rose-100 text-rose-900 border-rose-300'
-                }`}
-              >
-                <span
-                  className={`w-2.5 h-2.5 rounded-full ${
-                    snapshot?.available ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'
-                  }`}
-                />
-                <span>
-                  {snapshot?.available ? 'Live Firebase Stream: Connected' : 'Firebase Stream: Disconnected'}
-                </span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-2xs ${hardwareState.isConnected ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-slate-100 text-slate-700 border-slate-300'}`}>
+                <span className={`w-2.5 h-2.5 rounded-full ${hardwareState.isConnected ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
+                <span>{hardwareState.isConnected ? `● Connected: ${hardwareState.deviceId}` : '● Status: Disconnected'}</span>
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold font-mono border border-slate-200">
-                <Radio className="w-3.5 h-3.5 text-blue-600" />
-                <span>RS485 7-in-1 Modbus</span>
+                <Wifi className="w-3.5 h-3.5 text-agri-700" />
+                <span>{t.iotProtocol}</span>
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{t.iotTitle}</h2>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              {t.iotTitle}
+            </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium max-w-2xl leading-relaxed">
-              Streaming real-time micro-climate and soil chemical readings directly from your connected field sensor node.
+              {hardwareState.isConnected ? t.iotSubtitle : 'No device connected. Pair your ESP32/Arduino prototype node to stream live telemetry.'}
             </p>
           </div>
 
+          {/* Device Power & Refresh Button */}
           <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+            
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">
+              <BatteryCharging className="w-4 h-4 text-emerald-600" />
+              <span>{telemetry.batteryLevel}% Solar</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-700">
+              <Radio className="w-3.5 h-3.5 text-blue-600" />
+              <span>{hardwareState.isConnected ? '-65' : '--'} dBm</span>
+            </div>
+
             {!hardwareState.isConnected && (
               <button
                 type="button"
@@ -170,7 +160,7 @@ export const IoTSensorsTab: React.FC<IoTSensorsTabProps> = ({
                 className="px-4 py-2 rounded-2xl bg-agri-700 hover:bg-agri-800 text-white text-xs font-black shadow-md shadow-agri-700/25 transition-all flex items-center gap-1.5"
               >
                 <Wifi className="w-3.5 h-3.5" />
-                <span>{hardwareState.deviceId || 'Pair Hardware'}</span>
+                <span>Pair Hardware Node</span>
               </button>
             )}
 
@@ -181,376 +171,331 @@ export const IoTSensorsTab: React.FC<IoTSensorsTabProps> = ({
               className="px-4 py-2 rounded-2xl bg-agri-700 hover:bg-agri-800 text-white text-xs font-black shadow-md shadow-agri-700/25 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-75"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Syncing...' : 'Sync Now'}</span>
+              <span>{isRefreshing ? 'Reading Sensors...' : t.iotRefreshBtn}</span>
             </button>
+
           </div>
+
         </div>
 
+        {/* Live Stream Telemetry Bar */}
         <div className="mt-5 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold text-slate-700">Firebase RTDB: /sensors</span>
-            <span className="text-slate-400">• Last Sync: {lastSyncTime}</span>
+            <span className="font-semibold text-slate-700">{telemetry.lastUpdated}</span>
+            <span className="text-slate-400">• Last Sync: {lastRefreshedTime}</span>
           </div>
-          <span className="font-mono text-[11px] text-agri-800 bg-agri-50 px-2 py-0.5 rounded-md border border-agri-200 font-bold">
-            Live onValue Listener Active
+            <span className="font-mono text-[11px] text-agri-800 bg-agri-50 px-2 py-0.5 rounded-md border border-agri-200 font-bold">
+            {hardwareState.isConnected ? `MAC ID: ${hardwareState.deviceId}` : 'Hardware ID: Not paired'}
           </span>
+            {hardwareState.isConnected && hardwareState.lastPing && (
+              <span className="text-[11px] font-semibold text-emerald-700">Last active: {hardwareState.lastPing}</span>
+            )}
         </div>
+
       </div>
 
-      {/* Loading or Data Unavailable fallback */}
-      {isLoading && !snapshot && (
-        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-12 text-center shadow-lg border border-slate-200 space-y-3">
-          <RefreshCw className="w-8 h-8 text-agri-600 animate-spin mx-auto" />
-          <p className="text-sm font-black text-slate-700">Connecting to Firebase Realtime Database...</p>
-          <p className="text-xs text-slate-500">Listening for live packets from your ESP32 soil sensor.</p>
-        </div>
-      )}
-
-      {snapshot && !snapshot.available && (
-        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-10 text-center shadow-lg border border-rose-200 space-y-3">
-          <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
-          <p className="text-base font-black text-slate-800">Sensor Data Unavailable</p>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Unable to stream live data from Firebase Realtime Database. Please verify your internet connection and ESP32 power.
-          </p>
-          <button
-            type="button"
-            onClick={handleManualRefresh}
-            className="px-5 py-2.5 rounded-2xl bg-agri-700 text-white text-xs font-black shadow-md hover:bg-agri-800 transition-all"
-          >
-            Retry Connection
-          </button>
-        </div>
-      )}
-
-      {snapshot && snapshot.available && (
-        <>
-          {/* Micro-climate Sensors Grid (Temperature, Humidity, Soil Moisture, EC) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 1. Soil pH */}
-            {readings.ph && (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-slate-200 flex flex-col justify-between space-y-3 hover:border-agri-400 transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-xs">
-                      pH
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Soil pH</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Acidity / Alkalinity</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(readings.ph.status)}
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="text-3xl font-black text-slate-900 font-mono">
-                    {readings.ph.displayValue}
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Optimal Range: 6.0 – 7.5</span>
-                </div>
-
-                <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                  {readings.ph.explanation}
-                </p>
-              </div>
-            )}
-
-            {/* 2. Air Humidity */}
-            {readings.humidity && (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-slate-200 flex flex-col justify-between space-y-3 hover:border-agri-400 transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
-                      <Droplets className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Air Humidity</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Ambient Relative Humidity</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(readings.humidity.status)}
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="text-3xl font-black text-slate-900 font-mono">
-                    {readings.humidity.displayValue} <span className="text-sm font-semibold text-slate-500">%</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Optimal Range: 40% – 70%</span>
-                </div>
-
-                <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                  {readings.humidity.explanation}
-                </p>
-              </div>
-            )}
-
-            {/* 3. Air Temperature */}
-            {readings.temperature && (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-slate-200 flex flex-col justify-between space-y-3 hover:border-agri-400 transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-                      <Thermometer className="w-4 h-4 text-amber-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Temperature</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Ambient Canopy Temp</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(readings.temperature.status)}
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="text-3xl font-black text-slate-900 font-mono">
-                    {readings.temperature.displayValue} <span className="text-sm font-semibold text-slate-500">°C</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Optimal Range: 18°C – 30°C</span>
-                </div>
-
-                <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                  {readings.temperature.explanation}
-                </p>
-              </div>
-            )}
-
-            {/* 4. Soil Moisture */}
-            {readings.moisture && (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-slate-200 flex flex-col justify-between space-y-3 hover:border-agri-400 transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center">
-                      <Droplets className="w-4 h-4 text-cyan-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Soil Moisture</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Volumetric Water Content</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(readings.moisture.status)}
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="text-3xl font-black text-slate-900 font-mono">
-                    {readings.moisture.displayValue} <span className="text-sm font-semibold text-slate-500">%</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Optimal Range: 40% – 60%</span>
-                </div>
-
-                <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                  {readings.moisture.explanation}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* NPK Macronutrients Section */}
-          <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-xl border border-slate-200/90 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-emerald-700" />
+      {/* ========================================================= */}
+      {/* B. LIVE SENSOR TELEMETRY CARDS (GRID LAYOUT)              */}
+      {/* ========================================================= */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        
+        {/* Card 1: Ambient & Soil Temperature (DHT22 / DS18B20) */}
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-200/90 flex flex-col justify-between space-y-4 hover:border-agri-400 transition-all">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                  <Thermometer className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-black text-slate-900">
-                    Soil N-P-K Macronutrients (mg/kg dry soil)
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                    {t.iotTempHumSensor}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    RS485 Modbus Optical 7-in-1 Soil Sensor Telemetry
-                  </p>
+                  <p className="text-[11px] text-slate-400 font-medium">Digital Probe Sensor</p>
                 </div>
               </div>
-
-              <span className="text-xs font-mono font-bold text-agri-900 bg-agri-50 px-3 py-1 rounded-xl border border-agri-200 self-start sm:self-auto">
-                Probe: Live Modbus
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                {t.iotThermalOptimal}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Nitrogen (N) */}
-              {readings.nitrogen && (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">Nitrogen (N)</span>
-                    {getStatusBadge(readings.nitrogen.status)}
-                  </div>
-                  <div className="text-2xl font-black text-slate-900 font-mono">
-                    {readings.nitrogen.displayValue} <span className="text-xs text-slate-500 font-normal">mg/kg</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                    {readings.nitrogen.explanation}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-medium pt-1 border-t border-slate-200">
-                    Standard range: 80 – 200 mg/kg
-                  </p>
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
+                <span className="text-[11px] font-bold text-slate-500 block">{t.iotAmbientTemp}</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block font-mono">
+                  {telemetry.ambientTempC}°C
+                </span>
+                <span className="text-[10px] text-emerald-700 font-bold mt-0.5 block">Normal Field Range</span>
+              </div>
 
-              {/* Phosphorus (P) */}
-              {readings.phosphorous && (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">Phosphorus (P)</span>
-                    {getStatusBadge(readings.phosphorous.status)}
-                  </div>
-                  <div className="text-2xl font-black text-slate-900 font-mono">
-                    {readings.phosphorous.displayValue} <span className="text-xs text-slate-500 font-normal">mg/kg</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                    {readings.phosphorous.explanation}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-medium pt-1 border-t border-slate-200">
-                    Standard range: 40 – 100 mg/kg
-                  </p>
-                </div>
-              )}
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
+                <span className="text-[11px] font-bold text-slate-500 block">{t.iotSoilTemp}</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block font-mono">
+                  {telemetry.soilTempC}°C
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium mt-0.5 block">Root Zone Temp</span>
+              </div>
+            </div>
 
-              {/* Potassium (K) */}
-              {readings.potassium && (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">Potassium (K)</span>
-                    {getStatusBadge(readings.potassium.status)}
-                  </div>
-                  <div className="text-2xl font-black text-slate-900 font-mono">
-                    {readings.potassium.displayValue} <span className="text-xs text-slate-500 font-normal">mg/kg</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                    {readings.potassium.explanation}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-medium pt-1 border-t border-slate-200">
-                    Standard range: 100 – 250 mg/kg
-                  </p>
-                </div>
-              )}
+            <div className="mt-3 p-3 bg-agri-50/70 rounded-2xl border border-agri-200 flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                <Droplets className="w-4 h-4 text-blue-500" />
+                <span>{t.iotRelativeHumidity}:</span>
+              </span>
+              <span className="font-black text-agri-950 text-sm font-mono">{telemetry.ambientHumidityPct}%</span>
             </div>
           </div>
 
-          {/* EC, Rain, and Pump Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Electrical Conductivity (EC) */}
-            {readings.ec && (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center">
-                      <Zap className="w-4 h-4 text-teal-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Conductivity (EC)</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Salinity & Total Dissolved Solids</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(readings.ec.status)}
-                </div>
+          <p className="text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100">
+            Optimal chlorophyll synthesis active within 22°C - 32°C.
+          </p>
+        </div>
 
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="text-2xl font-black text-slate-900 font-mono">
-                    {readings.ec.displayValue} <span className="text-xs font-semibold text-slate-500">µS/cm</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Optimal: 50 – 200 µS/cm</span>
+        {/* Card 2: Capacitive Soil Moisture Sensor */}
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-200/90 flex flex-col justify-between space-y-4 hover:border-agri-400 transition-all">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center">
+                  <Droplets className="w-5 h-5 text-blue-600" />
                 </div>
-
-                <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                  {readings.ec.explanation}
-                </p>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                    {t.iotSoilMoistureSensor}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Capacitive V2.0 Probe</p>
+                </div>
               </div>
-            )}
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-300">
+                {t.iotMoistureAdequate}
+              </span>
+            </div>
 
-            {/* Rain Sensor */}
-            {readings.rain && (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center">
-                      <CloudRain className="w-4 h-4 text-cyan-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Rain Sensor</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Precipitation Detector</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(readings.rain.status)}
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="text-2xl font-black text-slate-900 font-mono">
-                    {readings.rain.displayValue}
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Live Weather Sensor</span>
-                </div>
-
-                <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                  {readings.rain.explanation}
-                </p>
+            {/* Large Moisture Percentage & Dial */}
+            <div className="p-4 bg-gradient-to-br from-blue-50/70 to-emerald-50/70 rounded-2xl border border-blue-200 mt-4">
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-3xl font-black text-slate-900 font-mono">
+                  {telemetry.soilMoisturePct}%
+                </span>
+                <span className="text-xs font-bold text-blue-900 bg-white px-2 py-0.5 rounded-md border border-blue-200">
+                  Volumetric Water Content
+                </span>
               </div>
-            )}
 
-            {/* Pump Status */}
-            {readings.pump && (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center">
-                      <Power className="w-4 h-4 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Irrigation Pump</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Relay Switch State</p>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border flex items-center gap-1 ${
-                      readings.pump.displayValue === 'ON'
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                        : 'bg-slate-100 text-slate-700 border-slate-300'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        readings.pump.displayValue === 'ON' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-                      }`}
-                    />
-                    <span>{readings.pump.displayValue}</span>
-                  </span>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="text-2xl font-black text-slate-900 font-mono">
-                    {readings.pump.displayValue === 'ON' ? 'Active' : 'Standby'}
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Automated / Manual Relay</span>
-                </div>
-
-                <p className="text-[11px] text-slate-600 font-medium leading-snug">
-                  {readings.pump.explanation}
-                </p>
+              {/* Progress Gauge */}
+              <div className="w-full h-3 bg-blue-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-500 to-emerald-600 rounded-full transition-all duration-700"
+                  style={{ width: `${telemetry.soilMoisturePct}%` }}
+                />
               </div>
-            )}
+
+              <div className="flex justify-between text-[10px] text-slate-500 font-bold mt-1.5">
+                <span>0% Dry</span>
+                <span>60% Optimal</span>
+                <span>100% Saturated</span>
+              </div>
+            </div>
+
+            <div className="mt-3 p-2.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 flex items-center gap-2 font-medium">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Root aeration status: Normal. No water stress detected.</span>
+            </div>
           </div>
 
-          {/* Action callout */}
-          <div className="bg-gradient-to-r from-agri-900 via-agri-800 to-agri-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-agri-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h4 className="text-base font-black text-citrus-300">Run Vision Diagnosis with Field Data</h4>
-              <p className="text-xs text-agri-100 max-w-xl">
-                Combine your live micro-climate sensor data with computer-vision leaf diagnosis to calculate accurate disease progression risk.
+          <p className="text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100">
+            Next recommended drip irrigation cycle: in 14 hours.
+          </p>
+        </div>
+
+        {/* Card 3: Rain & Precipitation Optical Sensor */}
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-200/90 flex flex-col justify-between space-y-4 hover:border-agri-400 transition-all">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-2xl bg-cyan-100 text-cyan-800 flex items-center justify-center">
+                  <CloudRain className="w-5 h-5 text-cyan-600" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                    {t.iotRainSensor}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Optical Tipping-Bucket</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-300">
+                {t.iotNoRain}
+              </span>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 mt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600">Rain Intensity:</span>
+                <span className="text-base font-black text-slate-900 font-mono">
+                  {telemetry.rainIntensityMmHr} mm/hr
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600">Surface Wetness:</span>
+                <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                  Dry Canopy
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600">Solar PAR Light:</span>
+                <span className="text-xs font-black text-slate-900 font-mono">
+                  {telemetry.solarRadiationWm2} W/m²
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 p-2.5 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] font-medium leading-relaxed">
+                Clear sky condition. Safe for morning foliar spray application.
               </p>
             </div>
+          </div>
+
+          <p className="text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100">
+            Hardware rain-trip triggers automatic SMS alerts within 30s.
+          </p>
+        </div>
+
+      </div>
+
+      {/* Card 4: NPK Soil Nutrient Sensor (Full Width Component) */}
+      <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-xl border border-slate-200/90 space-y-5">
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-emerald-700" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-slate-900">
+                {t.iotNpkSensor}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Real-time Soil Macronutrient Electro-Chemical Telemetry (mg/kg dry soil)
+              </p>
+            </div>
+          </div>
+
+          <span className="text-xs font-mono font-bold text-agri-900 bg-agri-50 px-3 py-1 rounded-xl border border-agri-200 self-start sm:self-auto">
+            RS485 Modbus Interface Active
+          </span>
+        </div>
+
+        {/* 3 NPK Nutrients Gauges */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          {/* Nitrogen (N) */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-800">{t.iotNitrogen}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                {t.iotSufficient}
+              </span>
+            </div>
+            <div className="text-2xl font-black text-slate-900 font-mono">
+              {telemetry.npk.nitrogenMgKg} <span className="text-xs text-slate-500 font-normal">mg/kg</span>
+            </div>
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-600 rounded-full transition-all duration-700"
+                style={{ width: `${Math.min(100, (telemetry.npk.nitrogenMgKg / 200) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-slate-500 font-medium">Optimal vegetative leaf growth support.</p>
+          </div>
+
+          {/* Phosphorus (P) */}
+          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-amber-950">{t.iotPhosphorus}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-900 border border-amber-300">
+                Low (Deficit)
+              </span>
+            </div>
+            <div className="text-2xl font-black text-amber-950 font-mono">
+              {telemetry.npk.phosphorusMgKg} <span className="text-xs text-amber-700 font-normal">mg/kg</span>
+            </div>
+            <div className="w-full h-2.5 bg-amber-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-amber-600 rounded-full transition-all duration-700"
+                style={{ width: `${Math.min(100, (telemetry.npk.phosphorusMgKg / 80) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-amber-900 font-bold">⚠️ Root development booster needed.</p>
+          </div>
+
+          {/* Potassium (K) */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-800">{t.iotPotassium}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                {t.iotOptimal}
+              </span>
+            </div>
+            <div className="text-2xl font-black text-slate-900 font-mono">
+              {telemetry.npk.potassiumMgKg} <span className="text-xs text-slate-500 font-normal">mg/kg</span>
+            </div>
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-600 rounded-full transition-all duration-700"
+                style={{ width: `${Math.min(100, (telemetry.npk.potassiumMgKg / 300) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-slate-500 font-medium">Strong cellular wall & fruit size retention.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ========================================================= */}
+      {/* C. HARDWARE-DRIVEN AI ACTION ADVISORIES                   */}
+      {/* ========================================================= */}
+      <div className="bg-gradient-to-r from-agri-900 via-agri-800 to-agri-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-agri-700/60 relative overflow-hidden">
+        <div className="relative z-10 space-y-3">
+          
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-citrus-400/20 text-citrus-300 border border-citrus-400/30 text-xs font-black">
+            <Sparkles className="w-4 h-4 text-citrus-300" />
+            <span>{t.iotAiAdvisoryTitle}</span>
+          </div>
+
+          <p className="text-xs sm:text-sm text-agri-100 leading-relaxed font-medium max-w-4xl">
+            {telemetry.aiAdvisory[language]}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             {onNavigateToDiagnosis && (
               <button
                 type="button"
                 onClick={onNavigateToDiagnosis}
-                className="px-5 py-3 rounded-2xl bg-citrus-500 hover:bg-citrus-400 text-slate-950 text-xs font-black shadow-md transition-all flex items-center gap-2 shrink-0"
+                className="px-4 py-2.5 rounded-xl bg-citrus-500 hover:bg-citrus-400 text-slate-950 text-xs font-black shadow-md transition-all flex items-center gap-1.5 transform hover:scale-105"
               >
-                <span>Diagnose Crop</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Run Vision Scan for Fungal Spores</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {onNavigateToStore && (
+              <button
+                type="button"
+                onClick={onNavigateToStore}
+                className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                <span>Order Organic Phosphate Inputs 🛒</span>
               </button>
             )}
           </div>
-        </>
-      )}
+
+        </div>
+      </div>
+
     </div>
   );
 };

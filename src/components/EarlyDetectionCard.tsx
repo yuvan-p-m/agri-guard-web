@@ -12,7 +12,7 @@ import {
   Download
 } from 'lucide-react';
 import { Language, DiseaseDiagnosis } from '../types';
-import { useAppTranslation } from '../i18n';
+import { translations } from '../data/translations';
 
 interface EarlyDetectionCardProps {
   diagnosis: DiseaseDiagnosis;
@@ -25,19 +25,7 @@ export const EarlyDetectionCard: React.FC<EarlyDetectionCardProps> = ({
   language,
   onOpenPrescription,
 }) => {
-  const { t } = useAppTranslation();
-  const safeLang = (['en', 'hi', 'ta'].includes(language) ? language : 'en') as Language;
-
-  const cropTitle = diagnosis.cropName?.[safeLang] || diagnosis.cropName?.en || 'Crop';
-  const diseaseTitle = diagnosis.diseaseName?.[safeLang] || diagnosis.diseaseName?.en || 'Identified Plant Condition';
-  const alertText = diagnosis.earlyWarningAlert?.[safeLang] || diagnosis.earlyWarningAlert?.en || 'Early diagnostic observation confirmed.';
-  const symptomsList = Array.isArray(diagnosis.symptoms?.[safeLang])
-    ? diagnosis.symptoms[safeLang]
-    : Array.isArray(diagnosis.symptoms?.en)
-    ? diagnosis.symptoms.en
-    : ['Visual tissue anomalies detected on leaf surface'];
-  const spreadRate = typeof diagnosis.spreadRiskRate === 'number' ? diagnosis.spreadRiskRate : 0;
-  const confidenceVal = typeof diagnosis.confidence === 'number' ? diagnosis.confidence : 90;
+  const t = translations[language];
 
   return (
     <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-xl border border-agri-200/80 animate-slide-up">
@@ -51,14 +39,14 @@ export const EarlyDetectionCard: React.FC<EarlyDetectionCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-citrus-800">
-                {t.earlyWarningBadge || 'Early Warning Alert'}
+                {t.earlyWarningBadge}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-white text-agri-900 border border-agri-300 shadow-2xs">
-                <Award className="w-3 h-3 text-agri-600" /> {confidenceVal}% {t.confidenceScore || 'Confidence'}
+                <Award className="w-3 h-3 text-agri-600" /> {diagnosis.confidence}% {t.confidenceScore}
               </span>
             </div>
             <p className="text-xs text-slate-700 font-medium mt-0.5">
-              {diagnosis.stage || 'Early Stage (Inception)'}
+              {diagnosis.stage}
             </p>
           </div>
         </div>
@@ -69,7 +57,7 @@ export const EarlyDetectionCard: React.FC<EarlyDetectionCardProps> = ({
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-agri-800 hover:bg-agri-900 text-white text-xs font-bold shadow-md shadow-agri-800/20 transition-all transform hover:scale-105"
         >
           <FileCheck className="w-3.5 h-3.5 text-citrus-300" />
-          <span>{t.printPrescription || 'Prescription PDF'}</span>
+          <span>{t.printPrescription}</span>
         </button>
       </div>
 
@@ -77,30 +65,30 @@ export const EarlyDetectionCard: React.FC<EarlyDetectionCardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-5 border-b border-slate-100">
         <div className="md:col-span-2">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold uppercase tracking-wider mb-1">
-            🌱 {cropTitle}
+            🌱 {diagnosis.cropName[language]}
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
-            {diseaseTitle}
+            {diagnosis.diseaseName[language]}
           </h3>
           <p className="text-xs text-agri-800 italic font-mono mt-1 font-semibold flex items-center gap-1.5">
             <Microscope className="w-3.5 h-3.5 text-agri-600" />
-            <span>Pathogen: {diagnosis.scientificName || 'Identified Pathogen'}</span>
+            <span>Pathogen: {diagnosis.scientificName}</span>
           </p>
         </div>
 
         {/* Pathogen Type & Incubation Matrix */}
         <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex flex-col justify-between space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">{t.pathogenType || 'Pathogen Type'}:</span>
+            <span className="text-slate-500 font-medium">{t.pathogenType}:</span>
             <span className="font-bold px-2 py-0.5 bg-white rounded-md text-slate-800 border border-slate-200">
-              {diagnosis.pathogenType || 'Fungus'}
+              {diagnosis.pathogenType}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">{t.incubationTime || 'Incubation'}:</span>
+            <span className="text-slate-500 font-medium">{t.incubationTime}:</span>
             <span className="font-bold text-slate-800 flex items-center gap-1">
               <Clock className="w-3 h-3 text-amber-500" />
-              {diagnosis.incubationPeriod || '3 - 7 Days'}
+              {diagnosis.incubationPeriod}
             </span>
           </div>
         </div>
@@ -110,7 +98,7 @@ export const EarlyDetectionCard: React.FC<EarlyDetectionCardProps> = ({
       <div className="mt-4 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-2.5">
         <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
         <p className="text-xs text-amber-950 font-medium leading-relaxed">
-          {alertText}
+          {diagnosis.earlyWarningAlert[language]}
         </p>
       </div>
 
@@ -122,20 +110,20 @@ export const EarlyDetectionCard: React.FC<EarlyDetectionCardProps> = ({
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-bold text-rose-900 flex items-center gap-1">
               <TrendingUp className="w-3.5 h-3.5 text-rose-600" />
-              {t.spreadRisk || 'Spread Risk Rate'}
+              {t.spreadRisk}
             </span>
             <span className="text-sm font-black text-rose-700">
-              +{spreadRate}% Loss
+              +{diagnosis.spreadRiskRate}% Loss
             </span>
           </div>
           <div className="w-full h-2 bg-rose-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-rose-600 rounded-full transition-all duration-1000"
-              style={{ width: `${Math.min(100, spreadRate * 1.5)}%` }}
+              style={{ width: `${Math.min(100, diagnosis.spreadRiskRate * 1.5)}%` }}
             />
           </div>
           <p className="text-[10px] text-rose-700 mt-1.5 font-medium">
-            {t.spreadRiskNote || 'Potential loss rate without prompt intervention'}
+            {t.spreadRiskNote}
           </p>
         </div>
 
@@ -159,10 +147,10 @@ export const EarlyDetectionCard: React.FC<EarlyDetectionCardProps> = ({
       {/* Symptoms Detected Breakdown */}
       <div className="mt-4 pt-4 border-t border-slate-100">
         <p className="text-xs font-bold text-slate-800 mb-2">
-          {t.symptomsIdentified || 'Symptoms Identified'}:
+          {t.symptomsIdentified}:
         </p>
         <div className="space-y-1.5">
-          {symptomsList.map((sym, idx) => (
+          {diagnosis.symptoms[language].map((sym, idx) => (
             <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-agri-600 shrink-0 mt-0.5" />
               <span className="font-medium">{sym}</span>

@@ -1,20 +1,20 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { 
   Sprout, 
-  Activity, 
-  UserRound, 
-  Sparkles, 
-  Landmark,
-  Store
+  History, 
+  CloudRain, 
+  Store,
+  Cpu,
+  UserRound
 } from 'lucide-react';
 
-export type DashboardTab = 'diagnosis' | 'recommendations' | 'marketplace' | 'schemes' | 'fieldData' | 'profile';
+export type DashboardTab = 'diagnosis' | 'history' | 'weather' | 'iot' | 'store' | 'profile';
 
 interface NavigationTabsProps {
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
   unreadSmsCount: number;
+  cartItemsCount: number;
   isMobileOpen: boolean;
   onCloseMobileNav: () => void;
 }
@@ -23,40 +23,40 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
   activeTab,
   onTabChange,
   unreadSmsCount,
+  cartItemsCount,
   isMobileOpen,
   onCloseMobileNav,
 }) => {
-  const { t } = useTranslation();
-
   const tabs: { id: DashboardTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
       id: 'diagnosis',
-      label: t('tabCropDiagnosis', 'Crop Diagnosis'),
+      label: 'Crop Diagnosis',
       icon: <Sprout className="w-4 h-4 sm:w-5 sm:h-5 text-[#4ADE80]" />,
     },
     {
-      id: 'recommendations',
-      label: t('tabCropRecommendation', 'AI Crop Recommendation'),
-      icon: <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />,
+      id: 'history',
+      label: 'History & Feedback',
+      icon: <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#A16207]" />,
     },
     {
-      id: 'marketplace',
-      label: t('tabMarketplace', 'Marketplace & Mandi'),
-      icon: <Store className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />,
+      id: 'weather',
+      label: 'Weather Forecast',
+      icon: <CloudRain className="w-4 h-4 sm:w-5 sm:h-5 text-[#0284C7]" />,
     },
     {
-      id: 'schemes',
-      label: t('tabGovtSchemes', 'Govt Schemes'),
-      icon: <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />,
+      id: 'iot',
+      label: 'IoT Live Sensors',
+      icon: <Cpu className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />,
     },
     {
-      id: 'fieldData',
-      label: t('tabFieldData', 'Field Data'),
-      icon: <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />,
+      id: 'store',
+      label: 'Agri-Store (Supplies)',
+      icon: <Store className="w-4 h-4 sm:w-5 sm:h-5 text-[#991B1B]" />,
+      badge: cartItemsCount > 0 ? cartItemsCount : undefined,
     },
     {
       id: 'profile',
-      label: t('tabProfile', 'Profile'),
+      label: 'Profile',
       icon: <UserRound className="w-4 h-4 sm:w-5 sm:h-5 text-[#475569]" />,
     },
   ];
@@ -169,8 +169,8 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       </div>
 
       {/* Mobile: Bottom Fixed Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-2xl py-1.5 px-0.5 sm:px-2">
-        <div className="grid grid-cols-6 gap-0.5">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-lg border-t border-slate-200 shadow-2xl py-1.5 px-2">
+        <div className="grid grid-cols-6 gap-1">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -178,7 +178,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => onTabChange(tab.id)}
-                className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all relative ${
+                className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all relative ${
                   isActive
                     ? 'text-agri-900 font-black bg-agri-100/80'
                     : 'text-slate-600 hover:text-slate-900'
@@ -194,8 +194,8 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
                     </span>
                   )}
                 </div>
-                <span className="text-[8px] mt-1 truncate max-w-full font-bold leading-tight">
-                  {tab.id === 'schemes' ? t('schemesShort', 'Schemes') : tab.id === 'recommendations' ? t('aiCropsShort', 'AI Crops') : tab.id === 'marketplace' ? t('mandiShort', 'Mandi') : tab.id === 'fieldData' ? t('fieldDataShort', 'Field') : tab.label.split(' ')[0]}
+                <span className="text-[9px] mt-1 truncate max-w-full font-bold leading-tight">
+                  {tab.label.split(' ')[0]}
                 </span>
               </button>
             );

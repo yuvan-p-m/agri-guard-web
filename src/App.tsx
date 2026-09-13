@@ -6,33 +6,34 @@ import type {
   WeatherInfo, 
   DiseaseDiagnosis, 
   HistoryRecord, 
-  HardwareState,
-  ProgressionRisk
+  CartItem, 
+  EcomProduct,
+  Order,
+  HardwareState
 } from './types';
-import { useAppTranslation } from './i18n';
+import { translations } from './data/translations';
 import { cropDiseases } from './data/cropDiseases';
 import { demoProfiles, sampleWeatherStations, initialHistoryRecords } from './data/sampleHistory';
-
+import { ecommerceProducts } from './data/ecommerceProducts';
 
 import { AuthPage } from './components/AuthPage';
 import { Header } from './components/Header';
 import { NavigationTabs, type DashboardTab } from './components/NavigationTabs';
 import { DiagnosticHub } from './components/DiagnosticHub';
 import { EarlyDetectionCard } from './components/EarlyDetectionCard';
-import { DiseaseProgressionRiskCard } from './components/DiseaseProgressionRiskCard';
 import { TreatmentDosageCard } from './components/TreatmentDosageCard';
+import { HistoryLog } from './components/HistoryLog';
 import { WeatherSoilCard } from './components/WeatherSoilCard';
+import { AgriStoreCatalog } from './components/AgriStoreCatalog';
 import { IoTSensorsTab } from './components/IoTSensorsTab';
-import { CropRecommendationTab } from './components/CropRecommendationTab';
-import { MarketplaceTab } from './components/MarketplaceTab';
-import { GovtSchemesTab } from './components/GovtSchemesTab';
 import { PrescriptionModal } from './components/PrescriptionModal';
+import { CartDrawer } from './components/CartDrawer';
+import { CheckoutModal } from './components/CheckoutModal';
+import { OrderConfirmationModal } from './components/OrderConfirmationModal';
 import { ProfileFarmSettings } from './components/ProfileFarmSettings';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { getApiBaseUrl, weatherAPI, diseaseAPI, modelAPI } from './services/api';
+import { weatherAPI } from './services/api';
 
 export const App: React.FC = () => {
-  const { t, i18n } = useAppTranslation();
   // Page Routing State: Page 1 (Auth View) vs Page 2 (Main Dashboard)
   const [currentPage, setCurrentPage] = useState<'auth' | 'dashboard'>('auth');
   
@@ -40,19 +41,14 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('diagnosis');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Global App States - persisted language preference (normalized to 'en' | 'hi' | 'ta')
-  const [language, setLanguage] = useState<Language>(() => {
-    const stored = (localStorage.getItem('agriguard_language') || localStorage.getItem('i18nextLng') || 'en').toLowerCase();
-    if (stored.startsWith('hi')) return 'hi';
-    if (stored.startsWith('ta')) return 'ta';
-    return 'en';
-  });
+  // Global App States
+  const [language, setLanguage] = useState<Language>('en');
   const [user, setUser] = useState<UserProfile>({
     id: '',
     name: 'Farmer Partner',
     username: '',
     phone: '',
-    language: (localStorage.getItem('agriguard_language') || localStorage.getItem('i18nextLng') || 'en') as Language,
+    language: 'en',
     farmSize: 2.5,
     farmUnit: 'Acres',
     primaryCrop: 'Citrus (Orange / Lemon)',
@@ -60,26 +56,26 @@ export const App: React.FC = () => {
     district: '',
     isLoggedIn: false,
   });
-  const [weather, setWeather] = useState<WeatherInfo>({
-    ...sampleWeatherStations['Nagpur (Citrus Belt)'],
-    city: 'Fetching location',
-    state: '',
-  });
+  const [weather, setWeather] = useState<WeatherInfo>(sampleWeatherStations['Nagpur (Citrus Belt)']);
   const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(false);
   const [isGpsDenied, setIsGpsDenied] = useState<boolean>(false);
   
   // Diagnostic States
-  const [activeDiagnosis, setActiveDiagnosis] = useState<DiseaseDiagnosis | null>(null);
+  const [activeDiagnosis, setActiveDiagnosis] = useState<DiseaseDiagnosis>(cropDiseases[0]);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isAnalyzed, setIsAnalyzed] = useState<boolean>(false);
   const [acreage, setAcreage] = useState<number>(4.5);
-  const [progressionRisk, setProgressionRisk] = useState<ProgressionRisk | null>(null);
-  const [predictionSensorSnapshot, setPredictionSensorSnapshot] = useState<any>(null);
-  const [predictionWeatherSnapshot, setPredictionWeatherSnapshot] = useState<any>(null);
 
   // History & Feedback States
   const [history, setHistory] = useState<HistoryRecord[]>(initialHistoryRecords);
 
+  // E-Commerce & Cart
+  const [cart, setCart] = useState<CartItem[]>([
+    { product: ecommerceProducts[0], quantity: 1 },
+    { product: ecommerceProducts[1], quantity: 1 }
+  ]);
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [storeFilterIds, setStoreFilterIds] = useState<string[] | undefined>(undefined);
   const [hardwareState, setHardwareState] = useState<HardwareState>({
     isConnected: false,
     deviceId: null,
@@ -87,32 +83,50 @@ export const App: React.FC = () => {
     lastPing: null,
   });
 
+  // Orders State
+  const [orders, setOrders] = useState<Order[]>([
+    {
+      id: 'ord-initial-1',
+      orderNumber: '#AG-74291',
+      date: '2026-08-21, 10:15 AM',
+      items: [
+        { product: ecommerceProducts[0], quantity: 2 },
+        { product: ecommerceProducts[6], quantity: 1 }
+      ],
+      subtotal: 989,
+      discount: 99,
+      total: 890,
+      paymentMethod: 'COD',
+      paymentDetails: 'Cash on Delivery at Farm Doorstep',
+      shippingAddress: {
+        fullName: 'Rajesh Kumar',
+        phone: '+91 98765 43210',
+        villageTaluka: 'Orchard Sector 4, Saoner Road',
+        district: 'Nagpur',
+        state: 'Maharashtra',
+        pincode: '440001',
+      },
+      status: 'Delivered',
+      estimatedDelivery: 'Delivered on 22 Aug 2026',
+      trackingSteps: [
+        { title: 'Order Placed & Confirmed', desc: 'Order received', time: '21 Aug, 10:15 AM', completed: true, current: false },
+        { title: 'Packed & Quality Certified', desc: 'Packed at Nagpur Central Agro Depot', time: '21 Aug, 02:00 PM', completed: true, current: false },
+        { title: 'In Transit with Kisan Express', desc: 'Out on delivery route', time: '22 Aug, 09:00 AM', completed: true, current: false },
+        { title: 'Delivered to Farm Doorstep', desc: 'Handed over to Rajesh Kumar', time: '22 Aug, 03:45 PM', completed: true, current: true },
+      ]
+    }
+  ]);
+
+  // Checkout & Order Confirmation States
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
+  const [activeConfirmedOrder, setActiveConfirmedOrder] = useState<Order | null>(null);
+  const [isOrderConfirmationOpen, setIsOrderConfirmationOpen] = useState<boolean>(false);
+
   // Modals & TTS
   const [isPrescriptionOpen, setIsPrescriptionOpen] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
 
-  // AI Model Connection Status (polled every 30s)
-  const [modelStatus, setModelStatus] = useState<{
-    api_reachable: boolean;
-    model_loaded: boolean;
-    model_id: string;
-    status: string;
-  }>({ api_reachable: false, model_loaded: false, model_id: 'checking', status: 'checking' });
-
-  // Poll backend model status on mount and every 30 seconds
-  useEffect(() => {
-    let cancelled = false;
-    const checkStatus = async () => {
-      const result = await modelAPI.getStatus();
-      if (!cancelled) setModelStatus(result);
-    };
-    checkStatus();
-    const interval = setInterval(checkStatus, 30000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
+  const t = translations[language];
 
   // Trigger high-accuracy live GPS tracking
   const requestLiveGpsLocation = (isManualRetry = false) => {
@@ -153,9 +167,6 @@ export const App: React.FC = () => {
     setAcreage(profile.farmSize || 4.5);
     if (profile.language) {
       setLanguage(profile.language);
-      i18n.changeLanguage(profile.language);
-      localStorage.setItem('agriguard_language', profile.language);
-      localStorage.setItem('i18nextLng', profile.language);
     }
     setCurrentPage('dashboard');
     setActiveTab('diagnosis');
@@ -204,9 +215,6 @@ export const App: React.FC = () => {
   const handleLanguageChange = (newLang: Language) => {
     setLanguage(newLang);
     setUser((prev) => ({ ...prev, language: newLang }));
-    i18n.changeLanguage(newLang);
-    localStorage.setItem('agriguard_language', newLang);
-    localStorage.setItem('i18nextLng', newLang);
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -253,7 +261,7 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentPage === 'dashboard') {
+    if (activeTab === 'weather' || currentPage === 'dashboard') {
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -277,350 +285,39 @@ export const App: React.FC = () => {
     fetchLiveWeatherByCity(cleanCity);
   };
 
-  // AI Diagnostic Analysis with real PyTorch Backend Integration
-  const handleAnalyze = async (
-    file: File | null,
-    customImage?: string,
-    symptomText?: string,
-    sampleDisease?: DiseaseDiagnosis
-  ) => {
+  // AI Diagnostic Analysis
+  const handleAnalyze = (diagnosis: DiseaseDiagnosis, customImage?: string) => {
     setIsAnalyzing(true);
-    try {
-      let fileToUpload: File | null = file;
-
-      if (!fileToUpload && customImage && customImage.startsWith('blob:')) {
-        // Real camera/blob capture → convert to File for model inference
-        try {
-          const blob = await fetch(customImage).then((r) => r.blob());
-          fileToUpload = new File([blob], 'uploaded_leaf.jpg', { type: blob.type || 'image/jpeg' });
-        } catch (e) {
-          console.warn("Failed to convert blob preview to File:", e);
-        }
-      } else if (!fileToUpload && customImage && (customImage.startsWith('http') || customImage.startsWith('/'))) {
-        // Static sample/placeholder image — do NOT send to AI model
-        // Instead, use the sampleDisease template directly for instant demo result
-        if (sampleDisease) {
-          setActiveDiagnosis({ ...sampleDisease, id: `demo-${Date.now()}` });
-          setIsAnalyzed(true);
-          setIsAnalyzing(false);
-          return;
-        }
-        // No template, alert user to upload a real photo
-        alert("⚠️ Please upload or capture a real leaf photo to run AI crop detection. Sample images cannot be processed by the model.");
-        setIsAnalyzing(false);
-        return;
-      }
-
-      if (!fileToUpload) {
-        alert("⚠️ Please upload or capture a leaf photo first to run AI crop detection.");
-        setIsAnalyzing(false);
-        return;
-      }
-
-      const currentLang = i18n.language || language || 'en';
-      const predictionResult = await diseaseAPI.predict(fileToUpload, currentLang);
-
-
-      if (predictionResult && predictionResult.status === 'invalid_leaf') {
-        alert("⚠️ Leaf Detection Alert: The uploaded image does not appear to contain a valid crop leaf. Please upload a clear, focused photo of a plant leaf.");
-        setIsAnalyzing(false);
-        setIsAnalyzed(false);
-        setActiveDiagnosis(null);
-        return;
-      }
-
-      if (predictionResult && predictionResult.disease) {
-        const rawDisease = predictionResult.disease; // e.g. "Apple with Black Rot" or "Potato___Late_blight" or "Healthy"
-        const realConfidence = predictionResult.confidence; // e.g. 94.32
-
-        // Part 3: Combined Progression risk + Treatment from Gemini reasoning
-        if (predictionResult.progression_risk) {
-          const rec = predictionResult.progression_risk.pesticide_recommendation || predictionResult.pesticide_recommendation || predictionResult.progression_risk.treatment || predictionResult.treatment || null;
-          setProgressionRisk({
-            ...predictionResult.progression_risk,
-            pesticide_recommendation: rec,
-            treatment: rec,
-          });
-        } else if (rawDisease.toLowerCase().includes('healthy')) {
-          setProgressionRisk({
-            risk: 'No Risk',
-            progression_stage: 'Optimal Plant Health / No Disease',
-            vulnerability_window: 'N/A',
-            message: 'Plant is healthy — no disease progression to assess.',
-            pesticide_recommendation: null,
-            treatment: null,
-          });
-        } else {
-          setProgressionRisk(null);
-        }
-
-        if (predictionResult.sensor_snapshot) {
-          setPredictionSensorSnapshot(predictionResult.sensor_snapshot);
-        }
-        if (predictionResult.weather_snapshot) {
-          setPredictionWeatherSnapshot(predictionResult.weather_snapshot);
-        }
-
-        // Clean and format display title
-        const formattedTitle = rawDisease
-          .replace(/___/g, ' - ')
-          .replace(/_/g, ' ')
-          .trim();
-
-        const isHealthy = rawDisease.toLowerCase().includes('healthy');
-
-        // Extract crop and disease names cleanly
-        let cropNamePart = 'Crop';
-        let diseaseNamePart = formattedTitle;
-
-        if (formattedTitle.includes(' - ')) {
-          const parts = formattedTitle.split(' - ');
-          cropNamePart = parts[0].trim();
-          diseaseNamePart = parts[1].trim();
-        } else if (formattedTitle.toLowerCase().includes(' with ')) {
-          const parts = formattedTitle.split(/ with /i);
-          cropNamePart = parts[0].trim();
-          diseaseNamePart = parts[1].trim();
-        } else if (isHealthy) {
-          cropNamePart = formattedTitle.replace(/healthy/i, '').replace(/plant/i, '').trim() || 'Plant';
-          diseaseNamePart = 'Healthy (No Disease Detected)';
-        }
-
-        // Find matching base template in cropDiseases; DO NOT default to Citrus (cropDiseases[0])!
-        const lowerRaw = rawDisease.toLowerCase();
-        const lowerCrop = cropNamePart.toLowerCase();
-        const lowerDisease = diseaseNamePart.toLowerCase();
-
-        const template = cropDiseases.find((d) => {
-          const cId = d.cropId.toLowerCase();
-          const cEn = d.cropName.en.toLowerCase();
-          const dEn = d.diseaseName.en.toLowerCase();
-          return (
-            lowerRaw.includes(cId) ||
-            lowerCrop.includes(cId) ||
-            cEn.includes(lowerCrop) ||
-            dEn.includes(lowerDisease)
-          );
-        });
-
-        // Build customized diagnosis object for exact AI model result
-        const dynamicDiagnosis: DiseaseDiagnosis = template ? {
-          ...template,
-          id: `ai-${Date.now()}`,
-          diseaseName: {
-            en: isHealthy ? `Healthy ${cropNamePart} (No Disease)` : diseaseNamePart,
-            hi: isHealthy ? `स्वस्थ ${cropNamePart} (कोई बीमारी नहीं)` : diseaseNamePart,
-            ta: isHealthy ? `ஆரோக்கியமான ${cropNamePart} (நோய் இல்லை)` : diseaseNamePart
-          },
-          cropName: {
-            en: `${cropNamePart} (AI Backend Identified)`,
-            hi: `${cropNamePart} (AI द्वारा पहचाना गया)`,
-            ta: `${cropNamePart} (AI கண்டறிந்தது)`
-          },
-          confidence: realConfidence,
-          stage: isHealthy ? 'Early Stage (Inception)' : (realConfidence > 85 ? 'Moderate Progression' : 'Early Stage (Inception)'),
-          spreadRiskRate: isHealthy ? 0 : Math.min(95, Math.round(realConfidence * 0.85)),
-          earlyWarningAlert: {
-            en: isHealthy
-              ? `AI Crop Classifier confirmed this ${cropNamePart} leaf is healthy with ${realConfidence}% confidence. No immediate chemical intervention required.`
-              : `AI Model identified ${diseaseNamePart} on ${cropNamePart} with ${realConfidence}% confidence. Follow recommended organic or targeted protocols below.`,
-            hi: isHealthy
-              ? `AI मॉडल ने ${realConfidence}% सटीकता के साथ पुष्टि की है कि यह ${cropNamePart} पत्ता स्वस्थ है।`
-              : `AI मॉडल ने ${realConfidence}% सटीकता से ${cropNamePart} पर ${diseaseNamePart} की पहचान की है।`,
-            ta: isHealthy
-              ? `AI மாதிரி ${realConfidence}% நம்பிக்கையுடன் இந்த ${cropNamePart} இலை ஆரோக்கியமானது என்பதை உறுதிப்படுத்தியுள்ளது.`
-              : `AI மாதிரி ${realConfidence}% நம்பிக்கையுடன் ${cropNamePart} இலையில் ${diseaseNamePart} நோயைக் கண்டறிந்துள்ளது.`
-          },
-          symptoms: isHealthy
-            ? {
-                en: [
-                  'Vibrant green leaf tissue with uniform chlorophyll distribution',
-                  'No fungal, bacterial, or necrotic lesions detected',
-                  'Healthy leaf veins and normal stomatal transpiration'
-                ],
-                hi: ['समान क्लोरोफिल वितरण के साथ हरा पत्ता', 'कोई कवक या जीवाणु के धब्बे नहीं', 'स्वस्थ पत्ती की शिराएं'],
-                ta: ['சீரான பச்சையத்துடன் கூடிய ஆரோக்கியமான இலை', 'பூஞ்சை அல்லது பாக்டீரியா புள்ளிகள் இல்லை', 'ஆரோக்கியமான நரம்புகள்']
-              }
-            : {
-                en: template.symptoms?.en || ['Observed characteristic lesions on foliage'],
-                hi: template.symptoms?.hi || template.symptoms?.en || ['पत्तियों पर लक्षण देखे गए'],
-                ta: template.symptoms?.ta || template.symptoms?.en || ['இலையில் நோய் அறிகுறிகள் தெரிகின்றன']
-              },
-          sampleImage: customImage || template.sampleImage
-        } : {
-          id: `ai-${Date.now()}`,
-          cropId: cropNamePart.toLowerCase().replace(/\s+/g, '-'),
-          cropName: {
-            en: `${cropNamePart} (AI Backend Identified)`,
-            hi: `${cropNamePart} (AI द्वारा पहचाना गया)`,
-            ta: `${cropNamePart} (AI கண்டறிந்தது)`
-          },
-          diseaseName: {
-            en: isHealthy ? `Healthy ${cropNamePart} (No Disease)` : diseaseNamePart,
-            hi: isHealthy ? `स्वस्थ ${cropNamePart} (कोई बीमारी नहीं)` : diseaseNamePart,
-            ta: isHealthy ? `ஆரோக்கியமான ${cropNamePart} (நோய் இல்லை)` : diseaseNamePart
-          },
-          scientificName: isHealthy ? 'N/A' : `${cropNamePart} Pathogen`,
-          pathogenType: isHealthy ? 'Nutrient Deficiency' : (diseaseNamePart.toLowerCase().includes('virus') ? 'Virus' : (diseaseNamePart.toLowerCase().includes('bacteri') ? 'Bacterium' : 'Fungus')),
-          stage: isHealthy ? 'Early Stage (Inception)' : (realConfidence > 85 ? 'Moderate Progression' : 'Early Stage (Inception)'),
-          confidence: realConfidence,
-          incubationPeriod: isHealthy ? 'N/A' : '3 - 7 Days',
-          spreadRiskRate: isHealthy ? 0 : Math.min(95, Math.round(realConfidence * 0.85)),
-          earlyWarningAlert: {
-            en: isHealthy
-              ? `AI Crop Classifier confirmed this ${cropNamePart} leaf is healthy with ${realConfidence}% confidence. No immediate chemical intervention required.`
-              : `AI Model identified ${diseaseNamePart} on ${cropNamePart} with ${realConfidence}% confidence. Follow recommended organic or targeted protocols below.`,
-            hi: isHealthy
-              ? `AI मॉडल ने ${realConfidence}% सटीकता के साथ पुष्टि की है कि यह ${cropNamePart} पत्ता स्वस्थ है।`
-              : `AI मॉडल ने ${realConfidence}% सटीकता से ${cropNamePart} पर ${diseaseNamePart} की पहचान की है।`,
-            ta: isHealthy
-              ? `AI மாதிரி ${realConfidence}% நம்பிக்கையுடன் இந்த ${cropNamePart} இலை ஆரோக்கியமானது என்பதை உறுதிப்படுத்தியுள்ளது.`
-              : `AI மாதிரி ${realConfidence}% நம்பிக்கையுடன் ${cropNamePart} இலையில் ${diseaseNamePart} நோயைக் கண்டறிந்துள்ளது.`
-          },
-          symptoms: isHealthy
-            ? {
-                en: [
-                  'Vibrant green leaf tissue with uniform chlorophyll distribution',
-                  'No fungal, bacterial, or necrotic lesions detected',
-                  'Healthy leaf veins and normal stomatal transpiration'
-                ],
-                hi: ['समान क्लोरोफिल वितरण के साथ हरा पत्ता', 'कोई कवक या जीवाणु के धब्बे नहीं', 'स्वस्थ पत्ती की शिराएं'],
-                ta: ['சீரான பச்சையத்துடன் கூடிய ஆரோக்கியமான இலை', 'பூஞ்சை या பாக்டீரியா புள்ளிகள் இல்லை', 'ஆரோக்கியமான நரம்புகள்']
-              }
-            : {
-                en: [
-                  `Observed foliage spots and lesions characteristic of ${diseaseNamePart} on ${cropNamePart}`,
-                  `Chlorotic yellow halos or necrotic tissue patches on affected leaves`,
-                  `Potential leaf dropping and reduced photosynthetic capacity if untreated`
-                ],
-                hi: [
-                  `${cropNamePart} पर ${diseaseNamePart} के लक्षण देखे गए`,
-                  `प्रभावित पत्तियों पर पीले या भूरे धब्बे`,
-                  `उपचार न करने पर पत्तियों के गिरने की संभावना`
-                ],
-                ta: [
-                  `${cropNamePart} இலையில் ${diseaseNamePart} அறிகுறிகள் கண்டறியப்பட்டுள்ளன`,
-                  `பாதிக்கப்பட்ட இலைகளில் பழுப்பு புள்ளிகள்`,
-                  `சிகிச்சை அளிக்காவிட்டால் இலை உதிரும் அபாயம்`
-                ]
-              },
-          visualFeatures: isHealthy ? ['Uniform green chlorophyll', 'Smooth leaf margin'] : ['Foliage lesions', 'Chlorotic halo', 'Tissue discoloration'],
-          organicProtocol: {
-            overview: {
-              en: isHealthy
-                ? 'Apply seaweed extract or bio-stimulant foliar spray for enhanced plant vigor and stress tolerance.'
-                : `Apply bio-fungicide/bactericide (Neem oil 1500ppm / Trichoderma / Pseudomonas) to suppress ${diseaseNamePart}.`,
-              hi: isHealthy
-                ? 'पौधे की प्रतिरोधक क्षमता बढ़ाने के लिए समुद्री शैवाल अर्क का प्रयोग करें।'
-                : `${diseaseNamePart} को रोकने के लिए जैविक कवकनाशी का उपयोग करें।`,
-              ta: isHealthy
-                ? 'பயிரின் நோய் எதிர்ப்புத் திறனை அதிகரிக்க கடற்பாசி சாறு தெளிக்கவும்.'
-                : `${diseaseNamePart} நோயைக் கட்டுப்படுத்த இயற்கை பூஞ்சைக் கொல்லியைப் பயன்படுத்தவும்.`
-            },
-            remedies: [
-              {
-                id: `org-${Date.now()}`,
-                name: isHealthy ? 'Liquid Seaweed Extract Bio-Stimulant' : 'Cold-Pressed Neem Oil (1500 ppm) + Bio-Fungicide',
-                dosageFormula: (acres: number) => ({
-                  amount: `${(acres * 1000).toFixed(0)} ml (${(1.0 * acres).toFixed(1)} L)`,
-                  waterVolume: `${(acres * 200).toFixed(0)} Liters (10-12 Knapsack Tanks)`
-                }),
-                instructions: isHealthy
-                  ? 'Mix 2.5ml per liter of clean water and spray on foliage during early morning.'
-                  : 'Mix 5ml Neem oil per liter of water with 1ml organic liquid soap. Spray thoroughly on upper and lower leaf surfaces.',
-                schedule: 'Apply every 7-10 days until crop condition improves.',
-                safetyCaution: 'Do not spray under direct midday sun (above 35°C).',
-                phiDays: 0,
-                productLinkIds: ['prod-neem-1500', 'prod-knapsack-sprayer']
-              }
-            ]
-          },
-          chemicalProtocol: {
-            overview: {
-              en: isHealthy
-                ? 'No chemical sprays required for healthy crops. Maintain balanced NPK nutrition.'
-                : `Targeted systemic/contact spray formulation recommended for ${diseaseNamePart} control.`,
-              hi: isHealthy
-                ? 'स्वस्थ फसल के लिए किसी रासायनिक छिड़काव की आवश्यकता नहीं है।'
-                : `${diseaseNamePart} नियंत्रण के लिए अनुशंसित रासायनिक छिड़काव।`,
-              ta: isHealthy
-                ? 'ஆரோக்கியமான பயிர்களுக்கு இரசாயன தெளிப்பு தேவையில்லை.'
-                : `${diseaseNamePart} கட்டுப்பாட்டுக்கான பரிந்துரைக்கப்பட்ட தெளிப்பு.`
-            },
-            remedies: [
-              {
-                id: `chem-${Date.now()}`,
-                name: isHealthy ? 'Chelated Micronutrient Spray' : `Targeted Formulation for ${diseaseNamePart}`,
-                activeIngredient: isHealthy ? 'Micronutrient Mixture (Zn, Fe, B)' : `Active Fungicide / Bactericide for ${diseaseNamePart}`,
-                dosageFormula: (acres: number) => ({
-                  amount: `${(acres * 400).toFixed(0)} grams / ml (2.0 per Liter water)`,
-                  waterVolume: `${(acres * 200).toFixed(0)} Liters`
-                }),
-                instructions: 'Dissolve 2g/ml per liter of water. Spray using a clean knapsack sprayer with hollow cone nozzle.',
-                schedule: 'Spray once immediately; repeat after 10-14 days if disease pressure persists.',
-                safetyCaution: 'Wear protective mask and gloves. Observe pre-harvest interval.',
-                phiDays: isHealthy ? 0 : 7,
-                productLinkIds: ['prod-copper-oxy', 'prod-ppe-kit']
-              }
-            ]
-          },
-          preventativeTips: {
-            en: [
-              `Maintain proper field sanitation and remove debris infected with ${diseaseNamePart}.`,
-              `Ensure adequate plant spacing and canopy aeration for ${cropNamePart}.`,
-              `Monitor crop regularly using AgriGuard AI scanner for early detection.`
-            ],
-            hi: [
-              `खेत की स्वच्छता बनाए रखें और ${diseaseNamePart} से प्रभावित अवशेषों को हटाएं।`,
-              `${cropNamePart} के लिए पर्याप्त हवा और धूप का ध्यान रखें।`,
-              `एग्रीगार्ड ऐप से नियमित जांच करते रहें।`
-            ],
-            ta: [
-              `வயலை சுத்தமாக வைத்துக்கொண்டிருங்கள்.`,
-              `பயிர்களுக்கு இடையே சரியான இடைவெளி பராமரிக்கவும்.`,
-              `அக்ரிகார்ட் செயலியைப் பயன்படுத்தி தொடர்ந்து கண்காணிக்கவும்.`
-            ]
-          },
-          recommendedProductIds: ['prod-neem-1500', 'prod-copper-oxy', 'prod-knapsack-sprayer', 'prod-ppe-kit'],
-          sampleImage: customImage || '/images/auth-bg.png'
-        };
-
-        setActiveDiagnosis(dynamicDiagnosis);
-        setIsAnalyzed(true);
-
-        // Add to history records automatically
-        const newRecord: HistoryRecord = {
-          id: `hist-${Date.now()}`,
-          date: new Date().toISOString().split('T')[0],
-          crop: cropNamePart,
-          diseaseName: isHealthy ? 'Healthy Plant' : diseaseNamePart,
-          stage: dynamicDiagnosis.stage,
-          severity: isHealthy ? 'Low' : (realConfidence > 85 ? 'High' : 'Moderate'),
-          status: isHealthy ? 'Resolved' : 'In Treatment',
-          fieldArea: `${acreage} ${t.acresUnit}`,
-          treatmentChosen: 'Organic',
-          feedback: null,
-          confidenceScore: realConfidence,
-          imageThumbnail: customImage || '/images/auth-bg.png'
-        };
-
-        setHistory((prev) => [newRecord, ...prev]);
-      } else {
-        alert("Backend API Warning: Disease detection returned no classification.");
-      }
-    } catch (err) {
-      console.error("Backend Connection Error:", err);
-      alert(`Backend Connection Error: Could not connect to AI model server at ${getApiBaseUrl()}/disease/predict. Please verify the configured backend URL.`);
+    
+    setTimeout(() => {
+      setActiveDiagnosis(diagnosis);
       setIsAnalyzing(false);
-      setIsAnalyzed(false);
-      setActiveDiagnosis(null);
-    } finally {
-      setIsAnalyzing(false);
+      setIsAnalyzed(true);
+
+      // Add to history records automatically
+      const newRecord: HistoryRecord = {
+        id: `hist-${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        crop: diagnosis.cropName[language].split('/')[0].trim(),
+        diseaseName: diagnosis.diseaseName[language],
+        stage: diagnosis.stage,
+        severity: diagnosis.spreadRiskRate > 50 ? 'High' : 'Moderate',
+        status: 'In Treatment',
+        fieldArea: `${acreage} ${t.acresUnit}`,
+        treatmentChosen: 'Organic',
+        feedback: null,
+        confidenceScore: diagnosis.confidence,
+        imageThumbnail: customImage || diagnosis.sampleImage
+      };
+
+      setHistory((prev) => [newRecord, ...prev]);
+
+      // Scroll smoothly to the diagnosis card
       const resultsEl = document.getElementById('diagnosis-results');
       if (resultsEl) {
         resultsEl.scrollIntoView({ behavior: 'smooth' });
       }
-    }
+    }, 1500);
   };
 
   // History Feedback & Re-Reference Handlers
@@ -652,7 +349,52 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Cart operations
+  const handleAddToCart = (product: EcomProduct) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { product, quantity: 1 }];
+    });
+  };
 
+  const handleInstantBuy = (product: EcomProduct) => {
+    handleAddToCart(product);
+    setIsCartOpen(true);
+  };
+
+  const handleUpdateQuantity = (productId: string, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.product.id === productId) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartItem[]
+    );
+  };
+
+  const handleRemoveItem = (productId: string) => {
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  };
+
+  // Order Placement Handler (from Checkout Modal)
+  const handleOrderComplete = (newOrder: Order) => {
+    setOrders((prev) => [newOrder, ...prev]);
+    setCart([]); // Clear cart
+    setIsCheckoutOpen(false);
+    setActiveConfirmedOrder(newOrder);
+    setIsOrderConfirmationOpen(true);
+  };
 
   // Text-To-Speech (TTS) Narration
   const handleToggleSpeech = () => {
@@ -663,8 +405,6 @@ export const App: React.FC = () => {
       setIsSpeaking(false);
       return;
     }
-
-    if (!activeDiagnosis) return;
 
     if (!('speechSynthesis' in window)) {
       alert('Text-to-speech is not supported on this browser.');
@@ -691,6 +431,7 @@ export const App: React.FC = () => {
   };
 
   const unreadAlertsCount = 0;
+  const totalCartItemsCount = cart.reduce((acc, i) => acc + i.quantity, 0);
 
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab);
@@ -735,16 +476,17 @@ export const App: React.FC = () => {
           user={user}
           onLogout={handleLogout}
           weather={weather}
+          cart={cart}
+          onOpenCart={() => setIsCartOpen(true)}
           isSpeaking={isSpeaking}
           onToggleSpeech={handleToggleSpeech}
           unreadNotifications={unreadAlertsCount}
           isMobileNavOpen={isMobileNavOpen}
           onToggleMobileNav={() => setIsMobileNavOpen((prev) => !prev)}
           onOpenNotifications={() => {
-            setActiveTab('diagnosis');
+            setActiveTab('weather');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          modelStatus={modelStatus}
         />
 
         {/* Tab Navigation (Desktop Top Bar / Mobile Bottom Bar) */}
@@ -752,6 +494,7 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           onTabChange={handleTabChange}
           unreadSmsCount={unreadAlertsCount}
+          cartItemsCount={totalCartItemsCount}
           isMobileOpen={isMobileNavOpen}
           onCloseMobileNav={() => setIsMobileNavOpen(false)}
         />
@@ -763,165 +506,130 @@ export const App: React.FC = () => {
           {/* TAB 1: CROP DIAGNOSIS (Default Focused View)               */}
           {/* ========================================================= */}
           {activeTab === 'diagnosis' && (
-            <ErrorBoundary fallbackTitle="Crop Diagnosis View">
-              <div className="space-y-6 max-w-5xl mx-auto animate-fade-in">
-                
-                {/* 1. Input Area: Dual Input Photo & Voice/Symptoms */}
-                <DiagnosticHub
-                  language={language}
-                  onAnalyze={handleAnalyze}
-                  isAnalyzing={isAnalyzing}
-                  selectedAcreage={acreage}
-                  onAcreageChange={(val) => setAcreage(val)}
-                  activeDiagnosis={activeDiagnosis}
-                  isAnalyzed={isAnalyzed}
-                  onClearAnalysis={() => {
-                    setIsAnalyzed(false);
-                    setProgressionRisk(null);
-                    setPredictionSensorSnapshot(null);
-                    setPredictionWeatherSnapshot(null);
-                  }}
-                />
+            <div className="space-y-6 max-w-5xl mx-auto animate-fade-in">
+              
+              {/* 1. Input Area: Dual Input Photo & Voice/Symptoms */}
+              <DiagnosticHub
+                language={language}
+                onAnalyze={handleAnalyze}
+                isAnalyzing={isAnalyzing}
+                selectedAcreage={acreage}
+                onAcreageChange={(val) => setAcreage(val)}
+                activeDiagnosis={activeDiagnosis}
+                isAnalyzed={isAnalyzed}
+                onClearAnalysis={() => setIsAnalyzed(false)}
+              />
 
-                {/* While Gemini is loading, show skeleton loader on both sections simultaneously */}
-                {isAnalyzing && (
-                  <div className="space-y-5 animate-fade-in">
-                    <DiseaseProgressionRiskCard
-                      progressionRisk={null}
-                      sensorSnapshot={predictionSensorSnapshot}
-                      weatherSnapshot={predictionWeatherSnapshot || weather}
+              {!isAnalyzed && (
+                <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-lg border border-agri-200/80 text-center animate-fade-in">
+                  <div className="w-12 h-12 mx-auto rounded-2xl bg-agri-100 flex items-center justify-center text-2xl">📷</div>
+                  <p className="mt-3 text-sm sm:text-base font-bold leading-relaxed text-slate-700">
+                    No Crop Scan Active: Upload a leaf photo, describe symptoms via voice, or select a sample crop above and click &apos;Analyze Crop with AgriGuard AI&apos; to generate diagnostic findings and dosage recommendations.
+                  </p>
+                </div>
+              )}
+
+              {isAnalyzed && (
+                <>
+                  {/* 2. AI Early Disease Detection Results */}
+                  <div id="diagnosis-results">
+                    <EarlyDetectionCard
+                      diagnosis={activeDiagnosis}
                       language={language}
-                      isLoading={true}
-                    />
-                    <TreatmentDosageCard
-                      treatment={null}
-                      sensorSnapshot={predictionSensorSnapshot}
-                      weatherSnapshot={predictionWeatherSnapshot || weather}
-                      isLoading={true}
-                      language={language}
-                      acreage={acreage}
+                      onOpenPrescription={() => setIsPrescriptionOpen(true)}
                     />
                   </div>
-                )}
 
-                {!isAnalyzed && !isAnalyzing && (
-                  <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-lg border border-agri-200/80 text-center animate-fade-in">
-                    <div className="w-12 h-12 mx-auto rounded-2xl bg-agri-100 flex items-center justify-center text-2xl">📷</div>
-                    <p className="mt-3 text-sm sm:text-base font-bold leading-relaxed text-slate-700">
-                      {t('noCropScanActive', "No Crop Scan Active: Upload a leaf photo or describe symptoms via voice and click 'Analyze Crop with AgriGuard AI' to generate diagnostic findings and dosage recommendations.")}
-                    </p>
-                  </div>
-                )}
+                  {/* 3. Precision Treatment & Dosage Recommendations */}
+                  <TreatmentDosageCard
+                    diagnosis={activeDiagnosis}
+                    language={language}
+                    acreage={acreage}
+                    onNavigateToStore={() => {
+                      setStoreFilterIds(activeDiagnosis.recommendedProductIds);
+                      setActiveTab('store');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  />
+                </>
+              )}
 
-                {isAnalyzed && activeDiagnosis && (
-                  <>
-                    {/* 2. AI Early Disease Detection Results */}
-                    <div id="diagnosis-results" className="space-y-5">
-                      <EarlyDetectionCard
-                        diagnosis={activeDiagnosis}
-                        language={language}
-                        onOpenPrescription={() => setIsPrescriptionOpen(true)}
-                      />
-
-                      {/* Disease Progression Risk via Gemini AI Reasoning & Live Sensors + Weather */}
-                      <DiseaseProgressionRiskCard
-                        progressionRisk={progressionRisk}
-                        sensorSnapshot={predictionSensorSnapshot}
-                        weatherSnapshot={predictionWeatherSnapshot || weather}
-                        language={language}
-                        isLoading={isAnalyzing}
-                      />
-                    </div>
-
-                    {/* 3. Precision Treatment & Dosage Recommendations via Live Gemini API */}
-                    <TreatmentDosageCard
-                      treatment={progressionRisk?.pesticide_recommendation || progressionRisk?.treatment}
-                      isHealthy={progressionRisk?.risk === 'No Risk' || String(activeDiagnosis.diseaseName?.en || '').toLowerCase().includes('healthy')}
-                      sensorSnapshot={predictionSensorSnapshot}
-                      weatherSnapshot={predictionWeatherSnapshot || weather}
-                      isLoading={isAnalyzing}
-                      language={language}
-                      acreage={acreage}
-                    />
-                  </>
-                )}
-
-              </div>
-            </ErrorBoundary>
+            </div>
           )}
 
-
+          {/* ========================================================= */}
+          {/* TAB 2: DISEASE HISTORY & FEEDBACK                          */}
+          {/* ========================================================= */}
+          {activeTab === 'history' && (
+            <div className="max-w-4xl mx-auto animate-fade-in">
+              <HistoryLog
+                language={language}
+                history={history}
+                onUpdateFeedback={handleUpdateFeedback}
+                onSelectHistoryItem={handleSelectHistoryItem}
+              />
+            </div>
+          )}
 
           {/* ========================================================= */}
-          {/* TAB 2: CROP RECOMMENDATION (GEMINI AI + SENSORS + WEATHER) */}
+          {/* TAB 3: WEATHER & SMS ADVISORY                              */}
           {/* ========================================================= */}
-          {activeTab === 'recommendations' && (
-            <CropRecommendationTab
+          {/* ========================================================= */}
+          {/* TAB 3: WEATHER FORECAST (GPS LIVE METEOROLOGICAL TELEMETRY) */}
+          {/* ========================================================= */}
+          {activeTab === 'weather' && (
+            <div className="max-w-4xl mx-auto animate-fade-in space-y-6">
+              <WeatherSoilCard
+                weather={weather}
+                language={language}
+                isLoading={isWeatherLoading}
+                isGpsDenied={isGpsDenied}
+                onRefreshLocation={() => requestLiveGpsLocation(true)}
+                onManualCitySubmit={(cityName) => fetchLiveWeatherByCity(cityName)}
+              />
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* TAB 4: IOT SENSOR TELEMETRY (LIVE HARDWARE PROTOTYPE)       */}
+          {/* ========================================================= */}
+          {activeTab === 'iot' && (
+            <IoTSensorsTab
               language={language}
-              user={user}
+              hardwareState={hardwareState}
+              onPairHardware={handlePairHardware}
               onNavigateToDiagnosis={() => {
                 setActiveTab('diagnosis');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToStore={() => {
+                setActiveTab('store');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
           )}
 
           {/* ========================================================= */}
-          {/* TAB: MARKETPLACE & MANDI PRICE COMPARISON & FORECAST      */}
+          {/* TAB 5: AGRI-STORE (FULL SUPPLIES CATALOG & ORDERS)        */}
           {/* ========================================================= */}
-          {activeTab === 'marketplace' && (
-            <MarketplaceTab
-              language={language}
-              user={user}
-            />
-          )}
-
-          {/* ========================================================= */}
-          {/* TAB 3: GOVT SCHEMES (CENTRAL & STATE DIRECT BENEFIT WELFARE)*/}
-          {/* ========================================================= */}
-          {activeTab === 'schemes' && (
-            <GovtSchemesTab
-              language={language}
-              user={user}
-            />
-          )}
-
-          {/* ========================================================= */}
-          {/* TAB: FIELD DATA (LIVE GPS WEATHER & IOT SENSOR TELEMETRY) */}
-          {/* ========================================================= */}
-          {activeTab === 'fieldData' && (
-            <div className="max-w-5xl mx-auto animate-fade-in space-y-6">
-              <WeatherSoilCard
-                weather={weather}
+          {activeTab === 'store' && (
+            <div className="animate-fade-in">
+              <AgriStoreCatalog
                 language={language}
-                user={user}
-                isLoading={isWeatherLoading}
-                isGpsDenied={isGpsDenied}
-                onRefreshLocation={() => requestLiveGpsLocation(true)}
-                onManualCitySubmit={(cityName) => fetchLiveWeatherByCity(cityName)}
-              />
-              <IoTSensorsTab
-                language={language}
-                hardwareState={hardwareState}
-                onPairHardware={handlePairHardware}
-                onNavigateToDiagnosis={() => {
-                  setActiveTab('diagnosis');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                onAddToCart={handleAddToCart}
+                onInstantBuy={handleInstantBuy}
+                recommendedProductIds={storeFilterIds}
+                orders={orders}
+                onViewOrderDetails={(ord) => {
+                  setActiveConfirmedOrder(ord);
+                  setIsOrderConfirmationOpen(true);
                 }}
               />
             </div>
           )}
 
-
-
           {activeTab === 'profile' && (
-            <ProfileFarmSettings 
-              language={language} 
-              user={user} 
-              onSave={handleProfileSave} 
-              hardwareState={hardwareState} 
-              onLogout={handleLogout} 
-            />
+            <ProfileFarmSettings language={language} user={user} onSave={handleProfileSave} hardwareState={hardwareState} />
           )}
 
         </main>
@@ -956,7 +664,43 @@ export const App: React.FC = () => {
         language={language}
       />
 
+      {/* Shopping Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onProceedToCheckout={() => setIsCheckoutOpen(true)}
+        user={user}
+        language={language}
+      />
 
+      {/* Multi-Step Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        items={cart}
+        user={user}
+        language={language}
+        onOrderComplete={handleOrderComplete}
+      />
+
+      {/* Dedicated Order Confirmation Modal / Page */}
+      <OrderConfirmationModal
+        isOpen={isOrderConfirmationOpen}
+        onClose={() => setIsOrderConfirmationOpen(false)}
+        order={activeConfirmedOrder}
+        language={language}
+        onNavigateToStore={() => {
+          setActiveTab('store');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onNavigateToDiagnosis={() => {
+          setActiveTab('diagnosis');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
 
     </div>
   );
